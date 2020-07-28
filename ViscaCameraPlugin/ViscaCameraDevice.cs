@@ -37,6 +37,7 @@ namespace ViscaCameraPlugin
 		private readonly IBasicCommunication _comms;
 		private byte[] _commsByteBuffer = new byte[] { };
 		private readonly GenericCommunicationMonitor _commsMonitor;
+		private readonly bool _commsIsSerial;
 
 		private bool _power;
 		private bool _autoFocus;
@@ -290,12 +291,14 @@ namespace ViscaCameraPlugin
 			var socket = _comms as ISocketStatus;
 			if (socket != null)
 			{
-				socket.ConnectionChange += (sender, args) =>
-				{
-					Debug.Console(2, this, args.Client.ClientStatus.ToString());
-					if (ConnectFeedback != null) ConnectFeedback.FireUpdate();
-					if (StatusFeedback != null) StatusFeedback.FireUpdate();
-				};
+				// device is configured for IP control
+				_commsIsSerial = false;
+				socket.ConnectionChange += socket_ConnectionChange;
+			}
+			else
+			{
+				// device is configured for RS232 control
+				_commsIsSerial = true;
 			}
 
 			AddPostActivationAction(() => Connect = true);
@@ -417,6 +420,18 @@ namespace ViscaCameraPlugin
 
 		#endregion
 
+		private void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
+		{
+			Debug.Console(2, this, args.Client.ClientStatus.ToString());
+
+			if (ConnectFeedback != null)
+				ConnectFeedback.FireUpdate();
+
+			if (StatusFeedback != null)
+				StatusFeedback.FireUpdate();
+		}
+
+
 		/// <summary>
 		/// Send bytes to device
 		/// </summary>
@@ -465,12 +480,23 @@ namespace ViscaCameraPlugin
 		/// </summary>
 		public void Poll()
 		{
-			// power inquiry
-			SendBytes(new byte[] { _address, 0x09, 0x04, 0x00, 0xFF });
+			byte[] cmd;
 
-			if (Power)
-				// focus mode inquiry
-				SendBytes(new byte[] { _address, 0x09, 0x04, 0x38, 0xFF });
+			// power inquiry ? [serial cmd] : [ip cmd]			
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+			cmd = _commsIsSerial 
+				? new byte[] { _address, 0x09, 0x04, 0x00, 0xFF } 
+				: new byte[] { _address };
+			SendBytes(cmd);
+
+			if (!Power) return;
+
+			// focus mode inquiry ? [serial cmd] : [ip cmd]
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+			cmd = _commsIsSerial 
+				? new byte[] { _address, 0x09, 0x04, 0x38, 0xFF } 
+				: new byte[] { _address };
+			SendBytes(cmd);
 		}
 
 		/// <summary>
@@ -479,11 +505,29 @@ namespace ViscaCameraPlugin
 		/// <param name="state">power on/off</param>
 		public void SetPower(bool state)
 		{
-			// Power ? [send off] : [send on]
-			var cmd = Power
-				? new byte[] { _address, 0x01, 0x04, 0x00, 0x03, 0xFF }
-				: new byte[] { _address, 0x01, 0x04, 0x00, 0x02, 0xFF };
-			SendBytes(cmd);
+			byte[] cmd;
+
+			// VISCA serial command
+			if (_commsIsSerial)
+			{
+				// Power ? [send off] : [send on]
+				cmd = Power
+					? new byte[] { _address, 0x01, 0x04, 0x00, 0x03, 0xFF }
+					: new byte[] { _address, 0x01, 0x04, 0x00, 0x02, 0xFF };
+
+				SendBytes(cmd);
+			}
+			// VISCA over IP command
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+			else
+			{
+				// Power ? [send off] : [send on]
+				cmd = Power
+					? new byte[] { _address }
+					: new byte[] { _address };
+
+				SendBytes(cmd);
+			}
 		}
 
 		/// <summary>
@@ -493,8 +537,129 @@ namespace ViscaCameraPlugin
 		/// <param name="direction">EMoveDirection direction</param>
 		public void Move(bool state, EDirection direction)
 		{
+			if (_commsIsSerial)
+				MoveSerial(state, direction);
+			else
+				MoveIp(state, direction);
+		}
+
+		// VISCA serial commands
+		private void MoveSerial(bool state, EDirection direction)
+		{
 			byte[] cmd;
 
+			switch (direction)
+			{
+				case EDirection.Home:
+					{
+						cmd = state
+							? new byte[] { _address, 0x01, 0x06, 0x04, 0xFF }
+							: null;
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.PanLeft:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x01, 0x03, 0xFF }
+							: new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x03, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.PanRight:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x02, 0x03, 0xFF }
+							: new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x03, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.TiltUp:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x01, 0xFF }
+							: new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x03, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.TiltDown:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x02, 0xFF }
+							: new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x03, 0x03, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.ZoomIn:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x30 + ZoomSpeed), 0xFF }
+							: new byte[] { _address, 0x01, 0x04, 0x07, 0x00, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.ZoomOut:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x20 + ZoomSpeed), 0xFF }
+							: new byte[] { _address, 0x01, 0x04, 0x07, 0x00, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.FocusAuto:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x04, 0x38, 0x03, 0xFF }
+							: new byte[] { _address, 0x01, 0x04, 0x38, 0x02, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.FocusNear:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x04, 0x08, Convert.ToByte(0x30 + FocusSpeed), 0xFF }
+							: new byte[] { _address, 0x01, 0x04, 0x08, 0x02, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.FocusFar:
+					{
+						// state ? [moving] : [stop]
+						cmd = state
+							? new byte[] { _address, 0x01, 0x04, 0x08, Convert.ToByte(0x20 + FocusSpeed), 0xFF }
+							: new byte[] { _address, 0x01, 0x04, 0x08, 0x02, 0xFF };
+						SendBytes(cmd);
+						break;
+					}
+				case EDirection.PrivacyOn:
+					{
+						if (_privacyOnPreset == 0) return;
+						RecallPreset(_privacyOnPreset);
+						break;
+					}
+				case EDirection.PrivacyOff:
+					{
+						if (_privacyOffPreset == 0) return;
+						RecallPreset(_privacyOffPreset);
+						break;
+					}
+			}
+		}
+
+		// VISCA over IP commands
+		private void MoveIp(bool state, EDirection direction)
+		{
+			byte[] cmd;
+
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
 			switch (direction)
 			{
 				case EDirection.Home:
@@ -610,7 +775,14 @@ namespace ViscaCameraPlugin
 			if (value <= 0)
 				return;
 
-			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(value), 0xFF };
+			byte[] cmd;
+
+			// recall preset ? [serial cmd] : [ip cmd]
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+			cmd = _commsIsSerial 
+				? new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(value), 0xFF } 
+				: new byte[] { _address };
+
 			SendBytes(cmd);
 		}
 
@@ -623,7 +795,14 @@ namespace ViscaCameraPlugin
 			if (value <= 0)
 				return;
 
-			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF };
+			byte[] cmd;
+
+			// save preset ? [serial cmd] : [ip cmd]
+			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+			cmd = _commsIsSerial 
+				? new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF } 
+				: new byte[] { _address };
+
 			SendBytes(cmd);
 		}
 
