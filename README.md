@@ -1,4 +1,4 @@
-# Internal Essentials Plugin Template (c) 2020
+# VISCA
 
 ## License
 
@@ -6,17 +6,142 @@ Provided under MIT license
 
 ## Overview
 
-Use this repo as a template when creating a new plugin for Essentials. For more information about plugins, refer to the Essentials Wiki [Plugins](https://github.com/PepperDash/Essentials/wiki/Plugins) article.
+This repo is for VISCA camera plugin.
 
-## Github Actions
+## Device Specific
 
-This repo contains two Github Action workflows that will build this project automatically. Modify the SOLUTION_PATH and SOLUTION_FILE environment variables as needed. Any branches named `feature/*`, `release/*`, `hotfix/*` or `development` will automatically be built with the action and create a release in the repository with a version number based on the latest release on the master branch. If there are no releases yet, the version number will be 0.0.1. The version number will be modified based on what branch triggered the build:
+### RS-232 Communications
 
-- `feature` branch builds will be tagged with an `alpha` descriptor, with the Action run appended: `0.0.1-alpha-1`
-- `development` branch builds will be tagged with a `beta` descriptor, with the Action run appended: `0.0.1-beta-2`
-- `release` branches will be tagged with an `rc` descriptor, with the Action run appended: `0.0.1-rc-3`
-- `hotfix` branch builds will be tagged with a `hotfix` descriptor, with the Action run appended: `0.0.1-hotfix-4`
+| Setting      | Value                       |
+|--------------|-----------------------------|
+| Baud rate    | 9600 or 38,400 (selectable) |
+| Data bits    | 8                           |
+| Stop bits    | 1                           |
+| Parity       | None                        |
+| Flow control | none                        |
 
-Builds on the Master branch will ONLY be triggered by manually creating a release using the web interface in the repository. They will be versioned with the tag that is created when the release is created. The tags MUST take the form `major.minor.revision` to be compatible with the build process. A tag like `v0.1.0-alpha` is NOT compatabile and may result in the build process failing.
+### VISCA Over IP (UDP) **NOT COMPLETE**
 
-If you have any questions about the action, contact Andrew Welker or Neil Dorin.
+| Setting      | Value |
+|--------------|-------|
+| Default IP   |       |
+| Default Port | 52381 |
+| Username     |       |
+| Password     |       |
+
+## Configuration
+
+An example configuration is provided to assist in implementation
+
+### Device Configuation
+
+The device configuration provides an example of the Vaddio OneLink device, control method, presets and other device properties.
+
+```
+{	
+	"key": "camera-1",
+	"name": "VISCA Camera",
+	"type": "visca",
+	"group": "pluginDevices",
+	"properties": {
+		"control": {
+			"method": "tcpIp",
+			"tcpSshProperties": {
+				"address": "127.0.0.1",
+				"port": 23,
+				"username": "admin",
+				"password": "password",
+				"autoReconnect": true,
+				"autoReconnectIntervalMs": 10000
+			}
+		},
+	},
+	"pollTimeMs": 30000,
+	"warningTimeoutMs": 180000,
+	"errorTimeoutMs": 300000,
+	"address": 1,
+	"panSpeed": 12,
+	"tiltSpeed": 10,
+	"zoomSpeed": 3,
+	"focusSpeed": 4,
+	"privacyOnPreset": 15,
+	"privacyOffPreset": 1,
+	"presets": {
+		"1": {
+			"enabled": true,
+			"name": "Preset 1"
+		},
+		"2": {
+			"enabled": true,
+			"name": "Preset 2"
+		}
+	}
+}
+```
+
+
+### Bridge Configuration
+
+It is important to note the Vaddio OneLink Plugin is built on the Essentials Plugin Template and uses the **eiscApiAdvanced** type.  The following configuration is an example of the Bridge configuration.
+
+```
+{
+	"key": "plugin-bridge-1",
+	"uid": 11,
+	"name": "Communication Bridge",
+	"group": "api",
+	"type": "eiscApi",
+	"properties": {
+		"control": {
+		"tcpSshProperties": {
+			"address": "127.0.0.2",
+			"port": 0
+		},
+		"ipid": "1A"
+		},
+		"devices": [
+			{
+				"deviceKey": "camera-1",
+				"joinStart": 1
+			}
+		]
+	}
+}
+```
+
+## SiMPL Bridge Joins
+
+### Digitals
+| dig-o                                    | I/O     | dig-i               |
+|------------------------------------------|---------|---------------------|
+| Tilt Up                                  | 1       |                     |
+| TiltDown                                 | 2       |                     |
+| Pan Left                                 | 3       |                     |
+| Pan Right                                | 4       |                     |
+| Zoom In                                  | 5       |                     |
+| Zoom Out                                 | 6       |                     |
+| Power On                                 | 7       | Power On Feedback   |
+| Power Off                                | 8       | Power Off Feedback  |
+| Is Online                                | 9       |                     |
+| Home                                     | 10      |                     |
+| Preset Recall (Press)/Preset Save (Hold) | 11 - 26 |                     |
+| Auto Focus                               | 30      | Auto Focus Feedback |
+| Preset Save (Press)                      | 31 - 46 |                     |
+| Privacy On                               | 48      |                     |
+| Privacy Off                              | 49      |                     |
+
+## Analogs
+| an_o        | I/O | an_i                 |
+|-------------|-----|----------------------|
+| Tilt Speed  | 1   | Tilt Speed Feedback  |
+| Pan Speed   | 2   | Pan Speed Feedback   |
+| Zoom Speed  | 3   | Zoom Speed Feedback  |
+| Focus Speed | 4   | Focus Speed Feedback |
+|             | 11  | Preset Count         |
+|             | 50  | Status               |
+
+## Serials
+| serial-o | I/O     | serial-i     |
+|----------|---------|--------------|
+|          | 1       | Device Name  |
+|          | 11 - 26 | Preset Names |
