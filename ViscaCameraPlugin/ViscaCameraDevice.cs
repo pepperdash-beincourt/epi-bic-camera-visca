@@ -470,6 +470,21 @@ namespace ViscaCameraPlugin
 			// focus auto:		0xy0, 0x50, 0x02, 0xFF	??? same as power on in document
 			// focus manual:	0xy0, 0x50, 0x03, 0xFF	??? same as power off in document
 
+			// from Sony SRG-300SE IP Visco Processor v1.0
+			//CHANGE From_Device
+			//{
+			//    if(left(From_Device, 7) = "\x02\x00\x00\x02\x00\x00\x00" && right(From_Device, 2) = "\x0F\x01")	// if camera didn't like the sequence number in the command that was sent
+			//    {
+			//        iCounter = 0xFFFFFFFF; // reset the sequence number to it's highest value
+			//        makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
+			//        // generate command w/ new sequence number
+			//        To_Device = sCommand;  // resend command
+			//    }
+			//    else if(left(From_Device, 2) = "\x01\x11" && right(From_Device, 1) = "\xFF")	// if valid response
+			//    {
+			//        Response = mid(From_Device, 9, byte(From_Device, 4));
+			//    }
+			//}
 
 			// save partial message here
 			_commsByteBuffer = byteBuffer;
@@ -484,6 +499,26 @@ namespace ViscaCameraPlugin
 
 			// power inquiry ? [serial cmd] : [ip cmd]			
 			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
+
+			// from Sony SRG-300SE IP v1.1.umc
+			// S-2.3 : Serial I/O > String_To_Send
+			// Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
+			// Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
+
+			// from Sony SRG-300SE IP Visco Processor v1.0
+			//CHANGE String_To_Send
+			//{
+			//    sStringToSend = String_To_Send;
+			//    if(iCounter = 0xFFFFFFFF)
+			//        iCounter = 0;
+			//    else
+			//        iCounter = iCounter + 1;
+			//    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
+			//    // generate command
+			//    To_Device = sCommand;
+			//}
+
+			 
 			cmd = _commsIsSerial 
 				? new byte[] { _address, 0x09, 0x04, 0x00, 0xFF } 
 				: new byte[] { _address };
