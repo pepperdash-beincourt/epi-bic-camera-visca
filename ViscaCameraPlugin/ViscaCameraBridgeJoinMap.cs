@@ -330,7 +330,7 @@ namespace ViscaCameraPlugin
 		#endregion
 
 		public ViscaCameraBridgeJoinMap(uint joinStart)
-			: base(joinStart)
+			: base(joinStart, typeof(ViscaCameraBridgeJoinMap))
 		{
 		}
 	}
