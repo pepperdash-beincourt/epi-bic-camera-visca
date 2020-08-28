@@ -50,55 +50,6 @@ namespace ViscaCameraPlugin
 		private readonly uint _privacyOffPreset;
 
 		/// <summary>
-		/// Connect feedback
-		/// </summary>
-		public BoolFeedback ConnectFeedback { get; private set; }
-		/// <summary>
-		/// Online feedback
-		/// </summary>
-		public BoolFeedback OnlineFeedback { get; private set; }
-		/// <summary>
-		/// Status value feedback
-		/// </summary>
-		public IntFeedback StatusFeedback { get; private set; }
-		/// <summary>
-		/// Power feedback
-		/// </summary>
-		public BoolFeedback PowerFeedback { get; private set; }
-		/// <summary>
-		/// Auto focus feedback
-		/// </summary>
-		public BoolFeedback AutoFocusFeedback { get; private set; }
-		/// <summary>
-		/// Pan speed feedback
-		/// </summary>
-		public IntFeedback PanSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Tilt speed feedback
-		/// </summary>
-		public IntFeedback TiltSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Zoom speed feedback
-		/// </summary>
-		public IntFeedback ZoomSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Focus speed feedback
-		/// </summary>
-		public IntFeedback FocusSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Preset count feedback
-		/// </summary>
-		public IntFeedback PresetCountFeedback { get; private set; }
-		/// <summary>
-		/// Preset name feedbacks
-		/// </summary>
-		public Dictionary<uint, StringFeedback> PresetNameFeedbacks { get; private set; }
-		/// <summary>
-		/// Preset enable feedbacks
-		/// </summary>
-		public Dictionary<uint, BoolFeedback> PresetEnableFeedbacks { get; private set; }
-
-		/// <summary>
 		/// Connect property
 		/// </summary>
 		public bool Connect
@@ -208,7 +159,7 @@ namespace ViscaCameraPlugin
 				_focusSpeed = (value < 1 || value > FocusSpeedMax) ? FocusSpeedDefault : value;
 				FocusSpeedFeedback.FireUpdate();
 			}
-		}
+		}		
 		/// <summary>
 		/// Move PTZ direction enumeration
 		/// </summary>
@@ -229,6 +180,59 @@ namespace ViscaCameraPlugin
 			PrivacyOff = 12
 		}
 
+		private Dictionary<uint, ViscaCameraPresetConfig> _presetNames; 
+
+		/// <summary>
+		/// Connect feedback
+		/// </summary>
+		public BoolFeedback ConnectFeedback { get; private set; }
+		/// <summary>
+		/// Online feedback
+		/// </summary>
+		public BoolFeedback OnlineFeedback { get; private set; }
+		/// <summary>
+		/// Status value feedback
+		/// </summary>
+		public IntFeedback StatusFeedback { get; private set; }
+		/// <summary>
+		/// Power feedback
+		/// </summary>
+		public BoolFeedback PowerFeedback { get; private set; }
+		/// <summary>
+		/// Auto focus feedback
+		/// </summary>
+		public BoolFeedback AutoFocusFeedback { get; private set; }
+		/// <summary>
+		/// Pan speed feedback
+		/// </summary>
+		public IntFeedback PanSpeedFeedback { get; private set; }
+		/// <summary>
+		/// Tilt speed feedback
+		/// </summary>
+		public IntFeedback TiltSpeedFeedback { get; private set; }
+		/// <summary>
+		/// Zoom speed feedback
+		/// </summary>
+		public IntFeedback ZoomSpeedFeedback { get; private set; }
+		/// <summary>
+		/// Focus speed feedback
+		/// </summary>
+		public IntFeedback FocusSpeedFeedback { get; private set; }
+		/// <summary>
+		/// Preset count feedback
+		/// </summary>
+		public IntFeedback PresetCountFeedback { get; private set; }
+		/// <summary>
+		/// Preset name feedbacks
+		/// </summary>
+		public Dictionary<uint, StringFeedback> PresetNameFeedbacks { get; private set; }
+		/// <summary>
+		/// Preset enable feedbacks
+		/// </summary>
+		public Dictionary<uint, BoolFeedback> PresetEnableFeedbacks { get; private set; }
+
+		
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -240,6 +244,9 @@ namespace ViscaCameraPlugin
 			: base(key, name)
 		{
 			Debug.Console(0, this, "Constructing new VISCA Camera instance");
+
+			_presetNames = new Dictionary<uint, ViscaCameraPresetConfig>();
+			_presetNames = config.Presets;
 
 			ConnectFeedback = new BoolFeedback(() => Connect);
 			OnlineFeedback = new BoolFeedback(() => _commsMonitor.IsOnline);
@@ -301,7 +308,26 @@ namespace ViscaCameraPlugin
 				_commsIsSerial = true;
 			}
 
+			AddPostActivationAction(() => InitializePresets(_presetNames));
 			AddPostActivationAction(() => Connect = true);
+		}
+
+		private void InitializePresets(Dictionary<uint, ViscaCameraPresetConfig> presets)
+		{
+			foreach (var preset in presets)
+			{
+				var item = preset;
+
+				Debug.Console(2, this,"Preset-{0} Enabled: {1} Name: {2}", item.Key, item.Value.Enabled.ToString(), item.Value.Name);
+
+				if(PresetNameFeedbacks == null)
+					PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
+
+				if (PresetNameFeedbacks.ContainsKey(item.Key))
+					PresetNameFeedbacks[item.Key] = new StringFeedback(() => item.Value.Name);
+				else
+					PresetNameFeedbacks.Add(item.Key, new StringFeedback(() => item.Value.Name));
+			}
 		}
 
 		#region Overrides of EssentialsBridgeableDevice
@@ -487,7 +513,7 @@ namespace ViscaCameraPlugin
 			//}
 
 			// save partial message here
-			_commsByteBuffer = byteBuffer;
+			//_commsByteBuffer = byteBuffer;
 		}
 
 		/// <summary>
@@ -835,7 +861,7 @@ namespace ViscaCameraPlugin
 			// save preset ? [serial cmd] : [ip cmd]
 			// TODO [ ] Replace serial VISCA commands with VISCA over IP commands
 			cmd = _commsIsSerial 
-				? new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF } 
+				? new byte[] { _address, 0x01, 0x04, 0x3F, 0x00, Convert.ToByte(value), 0xFF } 
 				: new byte[] { _address };
 
 			SendBytes(cmd);

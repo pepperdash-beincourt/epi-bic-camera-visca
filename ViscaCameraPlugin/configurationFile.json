@@ -26,7 +26,18 @@
         "group": "pluginDevices",
         "properties": {
           "control": {
-            "method": "tcpIp",
+            "method": "com",
+            "controlPortDevKey": "processor",
+            "controlPortNumber": 1,
+            "comParams": {
+              "baudRate": 9600,
+              "dataBits": 8,
+              "stopBits": 1,
+              "parity": "None",
+              "protocol": "RS232",
+              "hardwareHandshake": "None",
+              "softwareHandshake": "None"
+            },
             "tcpSshProperties": {
               "address": "127.0.0.1",
               "port": 23,
@@ -63,14 +74,15 @@
         "uid": 11,
         "name": "Communication Bridge",
         "group": "api",
-        "type": "eiscApi",
+        "type": "eiscApiAdvanced",
         "properties": {
           "control": {
+            "method": "ipidTcp",
+            "ipid": "B1",
             "tcpSshProperties": {
               "address": "127.0.0.2",
               "port": 0
-            },
-            "ipid": "1A"
+            }
           },
           "devices": [
             {
