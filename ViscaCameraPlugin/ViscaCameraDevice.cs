@@ -332,6 +332,13 @@ namespace ViscaCameraPlugin
 
 		#region Overrides of EssentialsBridgeableDevice
 
+		/// <summary>
+		/// Link to API method replaces bridge class, this method will be called by the bridge directly
+		/// </summary>
+		/// <param name="trilist"></param>
+		/// <param name="joinStart"></param>
+		/// <param name="joinMapKey"></param>
+		/// <param name="bridge"></param>
 		public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
 		{
 			var joinMap = new ViscaCameraBridgeJoinMap(joinStart);
@@ -343,7 +350,6 @@ namespace ViscaCameraPlugin
 			}
 
 			var customJoins = JoinMapHelper.TryGetJoinMapAdvancedForDevice(joinMapKey);
-
 			if (customJoins != null)
 			{
 				joinMap.SetCustomJoinData(customJoins);
