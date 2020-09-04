@@ -510,13 +510,13 @@ namespace ViscaCameraPlugin
 				else
 					_counter++;
 
-				var prefix = new byte[]
+				var header = new byte[]
 				{
 					0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), Convert.ToByte(_counter << 8), Convert.ToByte(_counter << 16), Convert.ToByte(_counter << 24), Convert.ToByte(_counter << 32)
 				};
 
-				var cmd = new byte[prefix.Length + bytes.Length];
-				prefix.CopyTo(cmd, 0);
+				var cmd = new byte[header.Length + bytes.Length];
+				header.CopyTo(cmd, 0);
 				bytes.CopyTo(cmd, cmd.Length);
 
 				_comms.SendBytes(cmd);
