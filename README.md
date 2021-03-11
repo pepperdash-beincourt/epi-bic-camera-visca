@@ -10,7 +10,15 @@ This repo is for VISCA camera plugin.
 
 ## Device Specific
 
-### RS-232 Communications
+### Plugin Valid Communication methods
+
+```c#
+Comm
+Tcpip
+Udp
+```
+
+### RS-232 Communications **UNTESTED**
 
 | Setting      | Value                       |
 |--------------|-----------------------------|
@@ -20,23 +28,7 @@ This repo is for VISCA camera plugin.
 | Parity       | None                        |
 | Flow control | none                        |
 
-### VISCA Over IP (UDP) **NOT COMPLETE**
-
-| Setting      | Value |
-|--------------|-------|
-| Default IP   |       |
-| Default Port | 52381 |
-| Username     |       |
-| Password     |       |
-
-## Configuration
-
-An example configuration is provided to assist in implementation
-
-### Device Configuation
-
-The device configuration provides an example of the Vaddio OneLink device, control method, presets and other device properties.
-
+#### RS-232 Configuration
 ```
 {	
 	"key": "camera-1",
@@ -45,10 +37,65 @@ The device configuration provides an example of the Vaddio OneLink device, contr
 	"group": "pluginDevices",
 	"properties": {
 		"control": {
-			"method": "tcpIp",
+			"method": "comm",
+			"controlPortDevKey": "exampleControlPortDevKey",
+			"controlPortNumber": 1,
+			"comParams": {
+				"baudRate": 9600,
+				"dataBits": 8,
+				"stopBits": 1,
+				"parity": "None",
+				"protocol": "RS232",
+				"hardwareHandshake": "None",
+				"softwareHandshake": "None"
+			},
+		},
+	},
+	"pollTimeMs": 30000,
+	"warningTimeoutMs": 180000,
+	"errorTimeoutMs": 300000,
+	"address": 1,
+	"panSpeed": 12,
+	"tiltSpeed": 10,
+	"zoomSpeed": 3,
+	"focusSpeed": 4,
+	"privacyOnPreset": 15,
+	"privacyOffPreset": 1,
+	"presets": {
+		"1": {
+			"enabled": true,
+			"name": "Preset 1"
+		},
+		"2": {
+			"enabled": true,
+			"name": "Preset 2"
+		}
+	}
+}
+```
+
+### VISCA Over IP (TCP) **TESTING IN PROGRESS**
+
+| Setting      | Value |
+|--------------|-------|
+| Default IP   |       |
+| Default Port | 5500  |
+| Username     |       |
+| Password     |       |
+
+#### RS-232 Configuration
+```
+{	
+	"key": "camera-1",
+	"name": "VISCA Camera",
+	"type": "visca",
+	"group": "pluginDevices",
+	"properties": {
+		"control": {
+			"method": "tcpip",
 			"tcpSshProperties": {
 				"address": "127.0.0.1",
-				"port": 23,
+				"port": 5500,
 				"username": "admin",
 				"password": "password",
 				"autoReconnect": true,
@@ -79,6 +126,57 @@ The device configuration provides an example of the Vaddio OneLink device, contr
 }
 ```
 
+### VISCA Over IP (UDP) **NOT COMPLETE**
+
+| Setting      | Value |
+|--------------|-------|
+| Default IP   |       |
+| Default Port | 52381 |
+| Username     |       |
+| Password     |       |
+
+#### UDP Configuration
+```
+{	
+	"key": "camera-1",
+	"name": "VISCA Camera",
+	"type": "visca",
+	"group": "pluginDevices",
+	"properties": {
+		"control": {
+			"method": "udp",
+			"tcpSshProperties": {
+				"address": "127.0.0.1",
+				"port": 52381,
+				"username": "admin",
+				"password": "password",
+				"autoReconnect": true,
+				"autoReconnectIntervalMs": 10000
+			}
+		},
+	},
+	"pollTimeMs": 30000,
+	"warningTimeoutMs": 180000,
+	"errorTimeoutMs": 300000,
+	"address": 1,
+	"panSpeed": 12,
+	"tiltSpeed": 10,
+	"zoomSpeed": 3,
+	"focusSpeed": 4,
+	"privacyOnPreset": 15,
+	"privacyOffPreset": 1,
+	"presets": {
+		"1": {
+			"enabled": true,
+			"name": "Preset 1"
+		},
+		"2": {
+			"enabled": true,
+			"name": "Preset 2"
+		}
+	}
+}
+```
 
 ### Bridge Configuration
 
@@ -122,7 +220,7 @@ It is important to note the Vaddio OneLink Plugin is built on the Essentials Plu
 | Zoom Out                                 | 6       |                     |
 | Power On                                 | 7       | Power On Feedback   |
 | Power Off                                | 8       | Power Off Feedback  |
-| Is Online                                | 9       |                     |
+|                                          | 9       | Is Online Feedback  |
 | Home                                     | 10      |                     |
 | Preset Recall (Press)/Preset Save (Hold) | 11 - 26 |                     |
 | Auto Focus                               | 30      | Auto Focus Feedback |
