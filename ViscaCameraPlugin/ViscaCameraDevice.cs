@@ -49,6 +49,7 @@ namespace ViscaCameraPlugin
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
 		private uint _counter = 0;
+        private bool _useHeader = false;
 
 		/// <summary>
 		/// Connect property
@@ -241,7 +242,7 @@ namespace ViscaCameraPlugin
 		/// <param name="name">device name</param>
 		/// <param name="config">device config</param>
 		/// <param name="comms">IBasicCommunications</param>
-		public ViscaCameraDevice(string key, string name, ViscaCameraConfig config, IBasicCommunication comms)
+		public ViscaCameraDevice(string key, string name, ViscaCameraConfig config, IBasicCommunication comms, string controlMethod)
 			: base(key, name)
 		{
 			Debug.Console(0, this, "Constructing new VISCA Camera instance");
@@ -291,6 +292,9 @@ namespace ViscaCameraPlugin
 
 			if (config.PrivacyOffPreset > 0 && config.PrivacyOffPreset <= PresetMax && config.PrivacyOffPreset != _privacyOffPreset)
 				_privacyOffPreset = config.PrivacyOffPreset;
+
+            if(controlMethod.ToLower() == "udp")
+                _useHeader = true;
 
 			_comms = comms;
 			_comms.BytesReceived += Handle_BytesRecieved;
@@ -477,49 +481,55 @@ namespace ViscaCameraPlugin
 		{
 			if (bytes == null) return;
 
-			if (_commsIsSerial)
+            if (_commsIsSerial)
 				_comms.SendBytes(bytes);
 			else
 			{
 				if (!_comms.IsConnected)
 					_comms.Connect();
 
-				// from Sony SRG-300SE IP v1.1.umc
-				// S-2.3 : Serial I/O > String_To_Send
-				// Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
-				// Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
+                if (_useHeader == true)
+                {
 
-				// from Sony SRG-300SE IP Visco Processor v1.0
-				//CHANGE String_To_Send
-				//{
-				//    sStringToSend = String_To_Send;
-				//    if(iCounter = 0xFFFFFFFF)
-				//        iCounter = 0;
-				//    else
-				//        iCounter = iCounter + 1;
-				//		Bitwise operators: {{ = rotate left - rotate X to the left by Y bits; full 16 bits ues, same as rotateLeft();
-				//				ex. X {{ Y
-				//    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
-				//    // generate command
-				//    To_Device = sCommand;
-				//}
+                    // from Sony SRG-300SE IP v1.1.umc
+                    // S-2.3 : Serial I/O > String_To_Send
+                    // Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
+                    // Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
 
-				// VISCA-over-IP counter
-				if (_counter == 0xFFFFFFFF)
-					_counter = 0;
-				else
-					_counter++;
+                    // from Sony SRG-300SE IP Visco Processor v1.0
+                    //CHANGE String_To_Send
+                    //{
+                    //    sStringToSend = String_To_Send;
+                    //    if(iCounter = 0xFFFFFFFF)
+                    //        iCounter = 0;
+                    //    else
+                    //        iCounter = iCounter + 1;
+                    //		Bitwise operators: {{ = rotate left - rotate X to the left by Y bits; full 16 bits ues, same as rotateLeft();
+                    //				ex. X {{ Y
+                    //    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
+                    //    // generate command
+                    //    To_Device = sCommand;
+                    //}
 
-				var header = new byte[]
+                    // VISCA-over-IP counter
+                    if (_counter == 0xFFFFFFFF)
+                        _counter = 0;
+                    else
+                        _counter++;
+
+                    var header = new byte[]
 				{
-					0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), Convert.ToByte(_counter << 8), Convert.ToByte(_counter << 16), Convert.ToByte(_counter << 24), Convert.ToByte(_counter << 32)
+					0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), (byte)(_counter << 8), (byte)(_counter << 16), (byte)(_counter << 24), (byte)(_counter << 32)
 				};
 
-				var cmd = new byte[header.Length + bytes.Length];
-				header.CopyTo(cmd, 0);
-				bytes.CopyTo(cmd, cmd.Length);
+                    var cmd = new byte[header.Length + bytes.Length];
+                    header.CopyTo(cmd, 0);
+                    bytes.CopyTo(cmd, header.Length);
+                    _comms.SendBytes(cmd);
+                }                
+                else
+                    _comms.SendBytes(bytes);
 
-				_comms.SendBytes(cmd);
 			}
 		}
 

@@ -34,6 +34,12 @@ namespace ViscaCameraPlugin
 		        return null;
 	        }
 
+            var controlProperties = CommFactory.GetControlPropertiesConfig(dc);
+			if (controlProperties == null)
+			{
+			    Debug.Console(2, "[{0}] VISCA Camera: failed to retrieve control properties config for {1}", dc.Key, dc.Name);
+			}
+
             var propertiesConfig = dc.Properties.ToObject<ViscaCameraConfig>();
 	        if (propertiesConfig == null)
 	        {
@@ -41,7 +47,7 @@ namespace ViscaCameraPlugin
 		        return null;
 	        }
 
-            return new ViscaCameraDevice(dc.Key, dc.Name, propertiesConfig, comms);
+            return new ViscaCameraDevice(dc.Key, dc.Name, propertiesConfig, comms, controlProperties.Method.ToString());
         }
 
     }
