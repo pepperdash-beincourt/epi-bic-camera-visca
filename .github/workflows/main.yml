@@ -116,7 +116,7 @@ jobs:
         with:
           name: Build
           path: ./
-    - name: Unzip Build file
+      - name: Unzip Build file
         run: |
           Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
           Remove-Item -Path .\*.zip
