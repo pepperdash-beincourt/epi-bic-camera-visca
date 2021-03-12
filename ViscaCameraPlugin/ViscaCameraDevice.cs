@@ -393,6 +393,39 @@ namespace ViscaCameraPlugin
 			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 
+            //pan tilt
+            trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.PanLeft);
+            });
+
+            trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.PanRight);
+            });
+
+            trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.TiltUp);
+            });
+
+            trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.TiltDown);
+            });
+
+            //zoom
+
+            trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.ZoomIn);
+            });
+
+            trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, (o) =>
+            {
+                Move(o, EDirection.ZoomOut);
+            });
+
 			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
@@ -760,7 +793,7 @@ namespace ViscaCameraPlugin
 			if (value <= 0)
 				return;
 
-			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x00, Convert.ToByte(value), 0xFF };
+			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF };
 			SendBytes(cmd);
 		}
 
