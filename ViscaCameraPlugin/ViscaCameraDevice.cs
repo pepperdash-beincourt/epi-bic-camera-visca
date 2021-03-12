@@ -397,29 +397,35 @@ namespace ViscaCameraPlugin
 			// preset
 			if (PresetCountFeedback != null) PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
 
-			if (PresetNameFeedbacks == null)
-				Debug.Console(0, "LinkToApi: PresetNameFeedbacks == null");
-			else
-			{
-				foreach (var item in PresetNameFeedbacks)
-				{
-					// preset number
-					var preset = (ushort)item.Key;
+            for (uint preset = 0; preset <= joinMap.PresetRecall.JoinSpan; preset++)
+            {
+                // preset recall
+                var recallJoin = preset + joinMap.PresetRecall.JoinNumber;
+                trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () => SavePreset(preset), () => RecallPreset(preset));
+            }
 
-					// preset names
-					var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
-					var nameFeedback = item.Value;
-					nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+            for (uint preset = 0; preset <= joinMap.PresetSave.JoinSpan; preset++)
+            {
+                // preset save/store
+                var saveJoin = preset + joinMap.PresetSave.JoinNumber;
+                trilist.SetSigTrueAction(saveJoin, () => SavePreset(preset));
+            }
 
-					// preset recall
-					var recallJoin = preset + joinMap.PresetRecall.JoinNumber - 1;
-					trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () => SavePreset(preset), () => RecallPreset(preset));
+            if (PresetNameFeedbacks == null)
+                Debug.Console(0, "LinkToApi: PresetNameFeedbacks == null");
+            else
+            {
+                foreach (var item in PresetNameFeedbacks)
+                {
+                    // preset number
+                    var preset = (ushort)item.Key;
 
-					// preset save/store
-					var saveJoin = preset + joinMap.PresetSave.JoinNumber - 1;
-					trilist.SetSigTrueAction(saveJoin, () => SavePreset(preset));
-				}
-			}
+                    // preset names
+                    var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
+                    var nameFeedback = item.Value;
+                    nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+                }
+            }
 
 
 			// home
