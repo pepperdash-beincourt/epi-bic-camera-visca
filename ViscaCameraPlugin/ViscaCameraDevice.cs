@@ -393,41 +393,30 @@ namespace ViscaCameraPlugin
 			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 
+            trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
+            PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
+
             //pan tilt
-            trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.PanLeft);
-            });
 
-            trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.PanRight);
-            });
+            trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, o => Move(o, EDirection.PanLeft));
+            trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, o => Move(o, EDirection.PanRight));
+            trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, o => Move(o, EDirection.TiltUp));
+            trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, o => Move(o, EDirection.TiltDown));
 
-            trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.TiltUp);
-            });
-
-            trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.TiltDown);
-            });
+            trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, value => SetPanSpeed(value));
+            trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, value => SetTiltSpeed(value));
 
             //zoom
 
-            trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.ZoomIn);
-            });
+            trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, o => Move(o, EDirection.ZoomIn));
+            trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, o => Move(o, EDirection.ZoomOut));
 
-            trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, (o) =>
-            {
-                Move(o, EDirection.ZoomOut);
-            });
+            trilist.SetUShortSigAction(joinMap.ZoomSpeed.JoinNumber, value => SetZoomSpeed(value));
 
-			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
-			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
+
+            // privacy
+            trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
+            trilist.SetBoolSigAction(joinMap.PrivacyOff.JoinNumber, sig => Move(sig, EDirection.PrivacyOff));
 
 			// preset - analog recall & save by number
 			trilist.SetUShortSigAction(joinMap.PresetRecallByNumber.JoinNumber, value =>
@@ -440,6 +429,9 @@ namespace ViscaCameraPlugin
 				SavePreset(value);
 				Debug.Console(0, this, "LinkToApi PresetSaveByNumber[{0}] => SavePreset({1})", joinMap.PresetSaveByNumber.JoinNumber, value);
 			});
+
+
+
 
 			// preset count feedback
 			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
