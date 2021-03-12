@@ -336,6 +336,9 @@ namespace ViscaCameraPlugin
 				return;
 			}
 
+            Debug.Console(0, this, "Intializing presets");
+
+            
 			foreach (var preset in presets)
 			{
 				var item = preset;
@@ -767,10 +770,21 @@ namespace ViscaCameraPlugin
 		/// Recall preset
 		/// </summary>
 		/// <param name="value">preset 1...16</param>
-		public void RecallPreset(uint value)
+		public void RecallPreset(uint preset)
 		{
-			if (value <= 0)
-				return;
+            if (preset < 0)
+                return;
+
+            Debug.Console(2, this, "RecallPresetFromBridge: {0}", preset);
+
+            uint value = preset;
+
+            ViscaCameraPresetConfig presetValue = null;
+        
+            if (_config.Presets.TryGetValue(preset, out presetValue ))
+                value = presetValue.Index;
+
+            Debug.Console(2, this, "RecallPresetIndex: {0}", value);
 
 			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(value), 0xFF };
 			SendBytes(cmd);
@@ -780,10 +794,21 @@ namespace ViscaCameraPlugin
 		/// Save preset
 		/// </summary>
 		/// <param name="value">preset 1...16</param>
-		public void SavePreset(uint value)
+		public void SavePreset(uint preset)
 		{
-			if (value <= 0)
-				return;
+            if (preset < 0)
+                return;
+
+            Debug.Console(2, this, "SavePresetFromBridge: {0}", preset);
+
+            uint value = preset;
+
+            ViscaCameraPresetConfig presetValue = null;
+
+            if (_config.Presets.TryGetValue(preset, out presetValue))
+                value = presetValue.Index;
+
+            Debug.Console(2, this, "SavePresetIndex: {0}", value);
 
 			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF };
 			SendBytes(cmd);

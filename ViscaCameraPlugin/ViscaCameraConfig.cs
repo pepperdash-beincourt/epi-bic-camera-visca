@@ -62,5 +62,9 @@ namespace ViscaCameraPlugin
 		[JsonProperty("name")]
 		public string Name { get; set; }
 
+        [JsonProperty("index")]
+        public uint Index { get; set; }
+
+
 	}
 }
