@@ -383,103 +383,82 @@ namespace ViscaCameraPlugin
 			// link joins to bridge
 			trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
 
-			if (OnlineFeedback != null) OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
-			if (SocketStatusFeedback != null) SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
-			//if(MonitorStatusFeedback != null) MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+			OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+			// must null check so LinkToApi doesn't except when the device is TCP or UDP
+			if (SocketStatusFeedback != null)
+				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 
 			// power
 			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
-			if (PowerFeedback != null) PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
+			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 
 			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
-			if (PowerFeedback != null) PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
+			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
-			// preset
-			if (PresetCountFeedback != null) PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
-
-            for (uint preset = 0; preset <= joinMap.PresetRecall.JoinSpan; preset++)
-            {
-                // preset recall
-                var recallJoin = preset + joinMap.PresetRecall.JoinNumber;
-                trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () => SavePreset(preset), () => RecallPreset(preset));
-            }
-
-            for (uint preset = 0; preset <= joinMap.PresetSave.JoinSpan; preset++)
-            {
-                // preset save/store
-                var saveJoin = preset + joinMap.PresetSave.JoinNumber;
-                trilist.SetSigTrueAction(saveJoin, () => SavePreset(preset));
-            }
-
-            if (PresetNameFeedbacks == null)
-                Debug.Console(0, "LinkToApi: PresetNameFeedbacks == null");
-            else
-            {
-                foreach (var item in PresetNameFeedbacks)
-                {
-                    // preset number
-                    var preset = (ushort)item.Key;
-
-                    // preset names
-                    var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
-                    var nameFeedback = item.Value;
-                    nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
-                }
-            }
-
-
-			// home
-			trilist.SetBoolSigAction(joinMap.Home.JoinNumber, sig => Move(sig, EDirection.Home));
-
-			// pan
-			trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, sig => Move(sig, EDirection.PanLeft));
-			trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, sig => Move(sig, EDirection.PanRight));
-			trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, value => SetPanSpeed(value));
-			if (PanSpeedFeedback != null) PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.PanSpeed.JoinNumber]);
-
-			// tilt
-			trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, sig => Move(sig, EDirection.TiltUp));
-			trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, sig => Move(sig, EDirection.TiltDown));
-			trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, value => SetTiltSpeed(value));
-			if (TiltSpeedFeedback != null) TiltSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.TiltSpeed.JoinNumber]);
-
-			// zoom
-			trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, sig => Move(sig, EDirection.ZoomIn));
-			trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, sig => Move(sig, EDirection.ZoomOut));
-			trilist.SetUShortSigAction(joinMap.ZoomSpeed.JoinNumber, value => SetZoomSpeed(value));
-			if (ZoomSpeedFeedback != null) ZoomSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.ZoomSpeed.JoinNumber]);
-
-			// focus
-			trilist.SetBoolSigAction(joinMap.AutoFocus.JoinNumber, sig => Move(sig, EDirection.FocusAuto));
-			if (AutoFocusFeedback != null) AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
-
-			// privacy
-			trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
-			trilist.SetBoolSigAction(joinMap.PrivacyOff.JoinNumber, sig => Move(sig, EDirection.PrivacyOff));
-
-			UpdateFeedbacks();
-
-			trilist.OnlineStatusChange += (o, a) =>
+			// preset - analog recall & save by number
+			trilist.SetUShortSigAction(joinMap.PresetRecallByNumber.JoinNumber, value =>
 			{
-				if (!a.DeviceOnLine) return;
-				trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
-				UpdateFeedbacks();
-			};
+				RecallPreset(value);
+				Debug.Console(0, this, "LinkToApi PresetRecallByNumber[{0}] => RecallPreset({1})", joinMap.PresetRecallByNumber.JoinNumber, value);
+			});
+			trilist.SetUShortSigAction(joinMap.PresetSaveByNumber.JoinNumber, value =>
+			{
+				SavePreset(value);
+				Debug.Console(0, this, "LinkToApi PresetSaveByNumber[{0}] => SavePreset({1})", joinMap.PresetSaveByNumber.JoinNumber, value);
+			});
+
+			// preset count feedback
+			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
+			// preset name feedback + digital recall and save
+			// !!!NOTE!!!: 
+			// This foreach loop will not allow recalling/saving any preset that is not defined in the config
+			// Use the analog PresetRecallByNumber/PresetSaveByNumber to recall presets that are NOT defined in config
+			foreach (var item in PresetNameFeedbacks)
+			{
+				// preset number
+				var preset = (ushort) item.Key;
+
+				// preset names
+				var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
+				var nameFeedback = item.Value;
+				nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+
+				// preset recall
+				var recallJoin = preset + joinMap.PresetRecall.JoinNumber - 1;
+				trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () =>
+				{
+					SavePreset(preset);
+					Debug.Console(0, this, "LinkToApi PresetRecall[{0}]: SavePreset({1})", recallJoin, preset);
+				}, () =>
+				{
+					RecallPreset(preset);
+					Debug.Console(0, this, "LinkToApi PresetRecall[{0}]: RecallPreset({1})", recallJoin, preset);
+				});
+
+				// preset save/store
+				var saveJoin = preset + joinMap.PresetSave.JoinNumber - 1;
+				trilist.SetSigTrueAction(saveJoin, () =>
+				{
+					SavePreset(preset);
+					Debug.Console(0, this, "LinkToApi PresetSave[{0}]: SavePreset({1})", saveJoin, preset);
+				});
+			}
 		}
 
 		private void UpdateFeedbacks()
 		{
-			if (OnlineFeedback != null) OnlineFeedback.FireUpdate();
+			OnlineFeedback.FireUpdate();
+			// must null check so LinkToApi doesn't except when the device is TCP or UDP
 			if (SocketStatusFeedback != null) SocketStatusFeedback.FireUpdate();
-			//if (MonitorStatusFeedback != null)  MonitorStatusFeedback.FireUpdate();
+			//MonitorStatusFeedback.FireUpdate();
 
-			if (PowerFeedback != null) PowerFeedback.FireUpdate();
-			if (PresetCountFeedback != null) PresetCountFeedback.FireUpdate();
-			if (PanSpeedFeedback != null) PanSpeedFeedback.FireUpdate();
-			if (TiltSpeedFeedback != null) TiltSpeedFeedback.FireUpdate();
-			if (ZoomSpeedFeedback != null) ZoomSpeedFeedback.FireUpdate();
-
-			if (PresetNameFeedbacks == null) return;
+			PowerFeedback.FireUpdate();			
+			PanSpeedFeedback.FireUpdate();
+			TiltSpeedFeedback.FireUpdate();
+			ZoomSpeedFeedback.FireUpdate();
+			PresetCountFeedback.FireUpdate();
+			
 			foreach (var item in PresetNameFeedbacks)
 				item.Value.FireUpdate();
 		}
@@ -490,8 +469,8 @@ namespace ViscaCameraPlugin
 		{
 			Debug.Console(1, this, args.Client.ClientStatus.ToString());
 
-			if (OnlineFeedback != null) OnlineFeedback.FireUpdate();
-
+			OnlineFeedback.FireUpdate();
+			// must null check so LinkToApi doesn't except when the device is TCP or UDP
 			if (SocketStatusFeedback != null) SocketStatusFeedback.FireUpdate();
 
 			if (args.Client.IsConnected) InitializeCamera();
