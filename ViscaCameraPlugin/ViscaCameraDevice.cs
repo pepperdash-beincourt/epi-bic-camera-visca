@@ -12,65 +12,32 @@ namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice
 	{
+		private readonly IBasicCommunication _comms;
+		private byte[] _commsByteBuffer = new byte[] { };
+		private readonly GenericCommunicationMonitor _commsMonitor;
+		private readonly bool _commsIsSerial;
+		private readonly bool _useHeader;
+		private uint _counter = 0;
+
+		private readonly ViscaCameraConfig _config;
+
 		private readonly byte _address = 0x81;
 		private const uint AddressMax = 7;
-
-		private const int PresetSaveHoldTimeMs = 5000; // 5s
-		private const int PresetMax = 16;
-
-		private const uint PanSpeedDefault = 9; // 00...18 (hex)
-		private const uint PanSpeedMax = 18;
-
-		private const uint TiltSpeedDefault = 9; // 00...18 (hex)
-		private const uint TiltSpeedMax = 18;
-
-		private const uint ZoomSpeedDefault = 4; // 00...07 (hex)
-		private const uint ZoomSpeedMax = 7;
-
-		private const uint FocusSpeedDefault = 4; // 00...07 (hex)
-		private const uint FocusSpeedMax = 7;
 
 		private readonly long _pollTimeMs = 30000; // 30s
 		private readonly long _warningTimeoutMs = 60000; // 60s
 		private readonly long _errorTimeoutMs = 180000; // 180s
 
-		private readonly IBasicCommunication _comms;
-		private byte[] _commsByteBuffer = new byte[] { };
-		private readonly GenericCommunicationMonitor _commsMonitor;
-		private readonly bool _commsIsSerial;
 
-		private bool _power;
-		private bool _autoFocus;
-		private int _presetCount;
-		private uint _panSpeed = PanSpeedDefault;
-		private uint _tiltSpeed = TiltSpeedDefault;
-		private uint _zoomSpeed = ZoomSpeedDefault;
-		private uint _focusSpeed = FocusSpeedDefault;
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
-		private uint _counter = 0;
-        private bool _useHeader = false;
 
+
+		private bool _power;
 		/// <summary>
-		/// Connect property
+		/// Power feedback
 		/// </summary>
-		public bool Connect
-		{
-			get { return _comms.IsConnected; }
-			set
-			{
-				if (value)
-				{
-					_comms.Connect();
-					_commsMonitor.Start();
-				}
-				else
-				{
-					_comms.Disconnect();
-					_commsMonitor.Stop();
-				}
-			}
-		}
+		public BoolFeedback PowerFeedback { get; private set; }
 		/// <summary>
 		/// Power property
 		/// </summary>
@@ -84,6 +51,13 @@ namespace ViscaCameraPlugin
 				PowerFeedback.FireUpdate();
 			}
 		}
+
+
+		private bool _autoFocus;
+		/// <summary>
+		/// Auto focus feedback
+		/// </summary>
+		public BoolFeedback AutoFocusFeedback { get; private set; }
 		/// <summary>
 		/// Auto focus property
 		/// </summary>
@@ -97,6 +71,15 @@ namespace ViscaCameraPlugin
 				AutoFocusFeedback.FireUpdate();
 			}
 		}
+
+
+		private const int PresetSaveHoldTimeMs = 5000; // 5s
+		private const int PresetMax = 16;
+		private int _presetCount;
+		/// <summary>
+		/// Preset count feedback
+		/// </summary>
+		public IntFeedback PresetCountFeedback { get; private set; }
 		/// <summary>
 		/// Preset count property
 		/// </summary>
@@ -110,6 +93,25 @@ namespace ViscaCameraPlugin
 				PresetCountFeedback.FireUpdate();
 			}
 		}
+
+
+		/// <summary>
+		/// Preset name feedbacks
+		/// </summary>
+		public Dictionary<uint, StringFeedback> PresetNameFeedbacks { get; private set; }
+		/// <summary>
+		/// Preset enable feedbacks
+		/// </summary>
+		public Dictionary<uint, BoolFeedback> PresetEnableFeedbacks { get; private set; }
+
+
+		private const uint PanSpeedDefault = 9; // 00...18 (hex)
+		private const uint PanSpeedMax = 18;
+		private uint _panSpeed = PanSpeedDefault;
+		/// <summary>
+		/// Pan speed feedback
+		/// </summary>
+		public IntFeedback PanSpeedFeedback { get; private set; }
 		/// <summary>
 		/// Pan speed
 		/// </summary>
@@ -123,6 +125,15 @@ namespace ViscaCameraPlugin
 				PanSpeedFeedback.FireUpdate();
 			}
 		}
+
+
+		private const uint TiltSpeedDefault = 9; // 00...18 (hex)
+		private const uint TiltSpeedMax = 18;
+		private uint _tiltSpeed = TiltSpeedDefault;
+		/// <summary>
+		/// Tilt speed feedback
+		/// </summary>
+		public IntFeedback TiltSpeedFeedback { get; private set; }
 		/// <summary>
 		/// Tilt speed
 		/// </summary>
@@ -136,6 +147,15 @@ namespace ViscaCameraPlugin
 				TiltSpeedFeedback.FireUpdate();
 			}
 		}
+
+
+		private const uint ZoomSpeedDefault = 4; // 00...07 (hex)
+		private const uint ZoomSpeedMax = 7;
+		private uint _zoomSpeed = ZoomSpeedDefault;
+		/// <summary>
+		/// Zoom speed feedback
+		/// </summary>
+		public IntFeedback ZoomSpeedFeedback { get; private set; }
 		/// <summary>
 		/// Zoom speed
 		/// </summary>
@@ -149,6 +169,15 @@ namespace ViscaCameraPlugin
 				ZoomSpeedFeedback.FireUpdate();
 			}
 		}
+
+
+		private const uint FocusSpeedDefault = 4; // 00...07 (hex)
+		private const uint FocusSpeedMax = 7;
+		private uint _focusSpeed = FocusSpeedDefault;
+		/// <summary>
+		/// Focus speed feedback
+		/// </summary>
+		public IntFeedback FocusSpeedFeedback { get; private set; }
 		/// <summary>
 		/// Focus speed
 		/// </summary>
@@ -162,6 +191,8 @@ namespace ViscaCameraPlugin
 				FocusSpeedFeedback.FireUpdate();
 			}
 		}
+
+
 		/// <summary>
 		/// Move PTZ direction enumeration
 		/// </summary>
@@ -182,57 +213,21 @@ namespace ViscaCameraPlugin
 			PrivacyOff = 12
 		}
 
-		private Dictionary<uint, ViscaCameraPresetConfig> _presetNames;
 
-		/// <summary>
-		/// Connect feedback
-		/// </summary>
-		public BoolFeedback ConnectFeedback { get; private set; }
 		/// <summary>
 		/// Online feedback
 		/// </summary>
 		public BoolFeedback OnlineFeedback { get; private set; }
-		/// <summary>
-		/// Status value feedback
-		/// </summary>
-		public IntFeedback StatusFeedback { get; private set; }
-		/// <summary>
-		/// Power feedback
-		/// </summary>
-		public BoolFeedback PowerFeedback { get; private set; }
-		/// <summary>
-		/// Auto focus feedback
-		/// </summary>
-		public BoolFeedback AutoFocusFeedback { get; private set; }
-		/// <summary>
-		/// Pan speed feedback
-		/// </summary>
-		public IntFeedback PanSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Tilt speed feedback
-		/// </summary>
-		public IntFeedback TiltSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Zoom speed feedback
-		/// </summary>
-		public IntFeedback ZoomSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Focus speed feedback
-		/// </summary>
-		public IntFeedback FocusSpeedFeedback { get; private set; }
-		/// <summary>
-		/// Preset count feedback
-		/// </summary>
-		public IntFeedback PresetCountFeedback { get; private set; }
-		/// <summary>
-		/// Preset name feedbacks
-		/// </summary>
-		public Dictionary<uint, StringFeedback> PresetNameFeedbacks { get; private set; }
-		/// <summary>
-		/// Preset enable feedbacks
-		/// </summary>
-		public Dictionary<uint, BoolFeedback> PresetEnableFeedbacks { get; private set; }
 
+		/// <summary>
+		/// Socket status feedback
+		/// </summary>
+		public IntFeedback SocketStatusFeedback { get; private set; }
+
+		/// <summary>
+		/// Monitor status feedback
+		/// </summary>
+		public IntFeedback MonitorStatusFeedback { get; private set; }
 
 
 		/// <summary>
@@ -242,59 +237,57 @@ namespace ViscaCameraPlugin
 		/// <param name="name">device name</param>
 		/// <param name="config">device config</param>
 		/// <param name="comms">IBasicCommunications</param>
-		public ViscaCameraDevice(string key, string name, ViscaCameraConfig config, IBasicCommunication comms, string controlMethod)
+		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
 			: base(key, name)
 		{
 			Debug.Console(0, this, "Constructing new VISCA Camera instance");
 
-			_presetNames = new Dictionary<uint, ViscaCameraPresetConfig>();
-			_presetNames = config.Presets;
+			_config = config;
 
-			ConnectFeedback = new BoolFeedback(() => Connect);
-			OnlineFeedback = new BoolFeedback(() => _commsMonitor.IsOnline);
-			StatusFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
+			OnlineFeedback = new BoolFeedback(() => _comms.IsConnected);
+			MonitorStatusFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
 
 			PowerFeedback = new BoolFeedback(() => Power);
-			AutoFocusFeedback = new BoolFeedback(() => AutoFocus);
-			PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
-			PresetCountFeedback = new IntFeedback(() => (int)PresetCount);
+			AutoFocusFeedback = new BoolFeedback(() => AutoFocus);			
 			PanSpeedFeedback = new IntFeedback(() => (int)PanSpeed);
 			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
-			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
+			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);			
+			PresetCountFeedback = new IntFeedback(() => (int)PresetCount);
+			PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
 
-			if (config.PollTimeMs > 0 && config.PollTimeMs != _pollTimeMs)
-				_pollTimeMs = config.PollTimeMs;
+			if (_config.PollTimeMs > 0 && _config.PollTimeMs != _pollTimeMs)
+				_pollTimeMs = _config.PollTimeMs;
 
-			if (config.WarningTimeoutMs > 0 && config.WarningTimeoutMs != _warningTimeoutMs)
-				_warningTimeoutMs = config.WarningTimeoutMs;
+			if (_config.WarningTimeoutMs > 0 && _config.WarningTimeoutMs != _warningTimeoutMs)
+				_warningTimeoutMs = _config.WarningTimeoutMs;
 
-			if (config.ErrorTimeoutMs > 0 && config.ErrorTimeoutMs != _errorTimeoutMs)
-				_errorTimeoutMs = config.ErrorTimeoutMs;
+			if (_config.ErrorTimeoutMs > 0 && _config.ErrorTimeoutMs != _errorTimeoutMs)
+				_errorTimeoutMs = _config.ErrorTimeoutMs;
 
-			if (config.Address > 0 && config.Address <= AddressMax && config.Address != _address)
-				_address = Convert.ToByte(0x80 + config.Address);
+			if (_config.Address > 0 && _config.Address <= AddressMax && _config.Address != _address)
+				_address = Convert.ToByte(0x80 + _config.Address);
 
-			if (config.PanSpeed > 0 && config.PanSpeed <= PanSpeedMax && config.PanSpeed != PanSpeed)
-				PanSpeed = config.PanSpeed;
+			if (_config.PanSpeed > 0 && _config.PanSpeed <= PanSpeedMax && _config.PanSpeed != PanSpeed)
+				PanSpeed = _config.PanSpeed;
 
-			if (config.TiltSpeed > 0 && config.TiltSpeed <= TiltSpeedMax && config.TiltSpeed != TiltSpeed)
-				TiltSpeed = config.TiltSpeed;
+			if (_config.TiltSpeed > 0 && _config.TiltSpeed <= TiltSpeedMax && _config.TiltSpeed != TiltSpeed)
+				TiltSpeed = _config.TiltSpeed;
 
-			if (config.ZoomSpeed > 0 && config.ZoomSpeed <= ZoomSpeedMax && config.ZoomSpeed != ZoomSpeed)
-				ZoomSpeed = config.ZoomSpeed;
+			if (_config.ZoomSpeed > 0 && _config.ZoomSpeed <= ZoomSpeedMax && _config.ZoomSpeed != ZoomSpeed)
+				ZoomSpeed = _config.ZoomSpeed;
 
-			if (config.FocusSpeed > 0 && config.FocusSpeed <= FocusSpeedMax && config.FocusSpeed != FocusSpeed)
-				FocusSpeed = config.FocusSpeed;
+			if (_config.FocusSpeed > 0 && _config.FocusSpeed <= FocusSpeedMax && _config.FocusSpeed != FocusSpeed)
+				FocusSpeed = _config.FocusSpeed;
 
-			if (config.PrivacyOnPreset > 0 && config.PrivacyOnPreset <= PresetMax && config.PrivacyOnPreset != _privacyOnPreset)
-				_privacyOnPreset = config.PrivacyOnPreset;
+			if (_config.PrivacyOnPreset > 0 && _config.PrivacyOnPreset <= PresetMax)
+				_privacyOnPreset = _config.PrivacyOnPreset;
 
-			if (config.PrivacyOffPreset > 0 && config.PrivacyOffPreset <= PresetMax && config.PrivacyOffPreset != _privacyOffPreset)
+			if (_config.PrivacyOffPreset > 0 && _config.PrivacyOffPreset <= PresetMax)
 				_privacyOffPreset = config.PrivacyOffPreset;
 
-            if(controlMethod.ToLower() == "udp")
-                _useHeader = true;
+			if (_config.Control.Method.ToString().ToLower() == "udp")
+				_useHeader = true;
 
 			_comms = comms;
 			_comms.BytesReceived += Handle_BytesRecieved;
@@ -306,26 +299,48 @@ namespace ViscaCameraPlugin
 				// device is configured for IP control
 				_commsIsSerial = false;
 				socket.ConnectionChange += socket_ConnectionChange;
-				AddPostActivationAction(() => Connect = true);
+				SocketStatusFeedback = new IntFeedback(() => (int)socket.ClientStatus);
 			}
 			else
 			{
 				// device is configured for RS232 control
 				_commsIsSerial = true;
 				_commsMonitor.Start();
-				AddPostActivationAction(InitializeCamera);
+				InitializeCamera();
 			}
 
-			AddPostActivationAction(() => InitializePresets(_presetNames));
+			InitializePresets(_config.Presets);
 		}
+
+
+		/// <summary>
+		/// Use the custom activate to connect the device and start the comms monitor
+		/// </summary>
+		/// <returns></returns>
+		public override bool CustomActivate()
+		{
+			// Essentials will handle the connect method to the device
+			_comms.Connect();
+			// Essentials will handle starting the comms monitor
+			_commsMonitor.Start();
+
+			return base.CustomActivate();
+		}
+
 
 		private void InitializePresets(Dictionary<uint, ViscaCameraPresetConfig> presets)
 		{
+			if (presets == null)
+			{
+				Debug.Console(0, this, "InitializePresets failed, preset dictionary is null");
+				return;
+			}
+
 			foreach (var preset in presets)
 			{
 				var item = preset;
 
-				Debug.Console(2, this, "Preset-{0} Enabled: {1} Name: {2}", item.Key, item.Value.Enabled.ToString(), item.Value.Name);
+				Debug.Console(0, this, "Preset-{0} Enabled: {1}, Name: {2}", item.Key, item.Value.Enabled, item.Value.Name);				
 
 				if (PresetNameFeedbacks == null)
 					PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
@@ -368,37 +383,44 @@ namespace ViscaCameraPlugin
 			// link joins to bridge
 			trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
 
-			//ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
-			StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
-			OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+			if (OnlineFeedback != null) OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+			if (SocketStatusFeedback != null) SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+			//if(MonitorStatusFeedback != null) MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 
 			// power
 			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
-			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
+			if (PowerFeedback != null) PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 
 			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
-			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
+			if (PowerFeedback != null) PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
 			// preset
-			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
-			foreach (var item in PresetNameFeedbacks)
+			if (PresetCountFeedback != null) PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
+
+			if (PresetNameFeedbacks == null)
+				Debug.Console(0, "LinkToApi: PresetNameFeedbacks == null");
+			else
 			{
-				// preset number
-				var preset = (ushort)item.Key;
+				foreach (var item in PresetNameFeedbacks)
+				{
+					// preset number
+					var preset = (ushort)item.Key;
 
-				// preset names
-				var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
-				var nameFeedback = item.Value;
-				nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+					// preset names
+					var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
+					var nameFeedback = item.Value;
+					nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
 
-				// preset recall
-				var recallJoin = preset + joinMap.PresetRecall.JoinNumber - 1;
-				trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () => SavePreset(preset), () => RecallPreset(preset));
+					// preset recall
+					var recallJoin = preset + joinMap.PresetRecall.JoinNumber - 1;
+					trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () => SavePreset(preset), () => RecallPreset(preset));
 
-				// preset save/store
-				var saveJoin = preset + joinMap.PresetSave.JoinNumber - 1;
-				trilist.SetSigTrueAction(saveJoin, () => SavePreset(preset));
+					// preset save/store
+					var saveJoin = preset + joinMap.PresetSave.JoinNumber - 1;
+					trilist.SetSigTrueAction(saveJoin, () => SavePreset(preset));
+				}
 			}
+
 
 			// home
 			trilist.SetBoolSigAction(joinMap.Home.JoinNumber, sig => Move(sig, EDirection.Home));
@@ -407,23 +429,23 @@ namespace ViscaCameraPlugin
 			trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, sig => Move(sig, EDirection.PanLeft));
 			trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, sig => Move(sig, EDirection.PanRight));
 			trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, value => SetPanSpeed(value));
-			PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.PanSpeed.JoinNumber]);
+			if (PanSpeedFeedback != null) PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.PanSpeed.JoinNumber]);
 
 			// tilt
 			trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, sig => Move(sig, EDirection.TiltUp));
 			trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, sig => Move(sig, EDirection.TiltDown));
 			trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, value => SetTiltSpeed(value));
-			PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.TiltSpeed.JoinNumber]);
+			if (TiltSpeedFeedback != null) TiltSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.TiltSpeed.JoinNumber]);
 
 			// zoom
 			trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, sig => Move(sig, EDirection.ZoomIn));
 			trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, sig => Move(sig, EDirection.ZoomOut));
 			trilist.SetUShortSigAction(joinMap.ZoomSpeed.JoinNumber, value => SetZoomSpeed(value));
-			PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.ZoomSpeed.JoinNumber]);
+			if (ZoomSpeedFeedback != null) ZoomSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.ZoomSpeed.JoinNumber]);
 
 			// focus
 			trilist.SetBoolSigAction(joinMap.AutoFocus.JoinNumber, sig => Move(sig, EDirection.FocusAuto));
-			AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
+			if (AutoFocusFeedback != null) AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
 
 			// privacy
 			trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
@@ -433,26 +455,25 @@ namespace ViscaCameraPlugin
 
 			trilist.OnlineStatusChange += (o, a) =>
 			{
-				if (a.DeviceOnLine)
-				{
-					trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
-					UpdateFeedbacks();
-				}
+				if (!a.DeviceOnLine) return;
+				trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
+				UpdateFeedbacks();
 			};
 		}
 
 		private void UpdateFeedbacks()
 		{
-			ConnectFeedback.FireUpdate();
-			OnlineFeedback.FireUpdate();
-			StatusFeedback.FireUpdate();
+			if (OnlineFeedback != null) OnlineFeedback.FireUpdate();
+			if (SocketStatusFeedback != null) SocketStatusFeedback.FireUpdate();
+			//if (MonitorStatusFeedback != null)  MonitorStatusFeedback.FireUpdate();
 
-			PowerFeedback.FireUpdate();
-			PresetCountFeedback.FireUpdate();
-			PanSpeedFeedback.FireUpdate();
-			TiltSpeedFeedback.FireUpdate();
-			ZoomSpeedFeedback.FireUpdate();
+			if (PowerFeedback != null) PowerFeedback.FireUpdate();
+			if (PresetCountFeedback != null) PresetCountFeedback.FireUpdate();
+			if (PanSpeedFeedback != null) PanSpeedFeedback.FireUpdate();
+			if (TiltSpeedFeedback != null) TiltSpeedFeedback.FireUpdate();
+			if (ZoomSpeedFeedback != null) ZoomSpeedFeedback.FireUpdate();
 
+			if (PresetNameFeedbacks == null) return;
 			foreach (var item in PresetNameFeedbacks)
 				item.Value.FireUpdate();
 		}
@@ -461,15 +482,13 @@ namespace ViscaCameraPlugin
 
 		private void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
 		{
-			Debug.Console(2, this, args.Client.ClientStatus.ToString());
+			Debug.Console(1, this, args.Client.ClientStatus.ToString());
 
-			if (ConnectFeedback != null)
-				ConnectFeedback.FireUpdate();
+			if (OnlineFeedback != null) OnlineFeedback.FireUpdate();
 
-			if (StatusFeedback != null)
-				StatusFeedback.FireUpdate();
+			if (SocketStatusFeedback != null) SocketStatusFeedback.FireUpdate();
 
-			InitializeCamera();
+			if (args.Client.IsConnected) InitializeCamera();
 		}
 
 
@@ -481,54 +500,54 @@ namespace ViscaCameraPlugin
 		{
 			if (bytes == null) return;
 
-            if (_commsIsSerial)
+			if (_commsIsSerial)
 				_comms.SendBytes(bytes);
 			else
 			{
 				if (!_comms.IsConnected)
 					_comms.Connect();
 
-                if (_useHeader == true)
-                {
-
-                    // from Sony SRG-300SE IP v1.1.umc
-                    // S-2.3 : Serial I/O > String_To_Send
-                    // Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
-                    // Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
-
-                    // from Sony SRG-300SE IP Visco Processor v1.0
-                    //CHANGE String_To_Send
-                    //{
-                    //    sStringToSend = String_To_Send;
-                    //    if(iCounter = 0xFFFFFFFF)
-                    //        iCounter = 0;
-                    //    else
-                    //        iCounter = iCounter + 1;
-                    //		Bitwise operators: {{ = rotate left - rotate X to the left by Y bits; full 16 bits ues, same as rotateLeft();
-                    //				ex. X {{ Y
-                    //    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
-                    //    // generate command
-                    //    To_Device = sCommand;
-                    //}
-
-                    // VISCA-over-IP counter
-                    if (_counter == 0xFFFFFFFF)
-                        _counter = 0;
-                    else
-                        _counter++;
-
-                    var header = new byte[]
+				if (_useHeader)
 				{
-					0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), (byte)(_counter << 8), (byte)(_counter << 16), (byte)(_counter << 24), (byte)(_counter << 32)
-				};
 
-                    var cmd = new byte[header.Length + bytes.Length];
-                    header.CopyTo(cmd, 0);
-                    bytes.CopyTo(cmd, header.Length);
-                    _comms.SendBytes(cmd);
-                }                
-                else
-                    _comms.SendBytes(bytes);
+					// from Sony SRG-300SE IP v1.1.umc
+					// S-2.3 : Serial I/O > String_To_Send
+					// Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
+					// Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
+
+					// from Sony SRG-300SE IP Visco Processor v1.0
+					//CHANGE String_To_Send
+					//{
+					//    sStringToSend = String_To_Send;
+					//    if(iCounter = 0xFFFFFFFF)
+					//        iCounter = 0;
+					//    else
+					//        iCounter = iCounter + 1;
+					//		Bitwise operators: {{ = rotate left - rotate X to the left by Y bits; full 16 bits ues, same as rotateLeft();
+					//				ex. X {{ Y
+					//    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
+					//    // generate command
+					//    To_Device = sCommand;
+					//}
+
+					// VISCA-over-IP counter
+					if (_counter != 0xFFFFFFFF)
+						_counter++;
+					else
+						_counter = 0;
+
+					var header = new byte[]
+					{
+						0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), (byte)(_counter << 8), (byte)(_counter << 16), (byte)(_counter << 24), (byte)(_counter << 32)
+					};
+
+					var cmd = new byte[header.Length + bytes.Length];
+					header.CopyTo(cmd, 0);
+					bytes.CopyTo(cmd, header.Length);
+					_comms.SendBytes(cmd);
+				}
+				else
+					_comms.SendBytes(bytes);
 
 			}
 		}

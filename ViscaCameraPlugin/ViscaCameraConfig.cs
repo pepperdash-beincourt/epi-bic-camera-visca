@@ -1,10 +1,14 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using PepperDash.Essentials.Core;
 
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraConfig
 	{
+		[JsonProperty("control")]
+		public EssentialsControlPropertiesConfig Control { get; set; }
+
 		[JsonProperty("deviceId")]
 		public long DeviceId { get; set; }
 

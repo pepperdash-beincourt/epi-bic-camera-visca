@@ -21,9 +21,9 @@
       },
       {
         "key": "camera-1",
-        "name": "VISCA Camera",
+        "name": "Camera 1",
         "type": "viscacamera",
-        "group": "pluginDevices",
+        "group": "pluginDevice",
         "properties": {
           "control": {
             "method": "com",
@@ -37,10 +37,64 @@
               "protocol": "RS232",
               "hardwareHandshake": "None",
               "softwareHandshake": "None"
+            }
+          },
+          "tcpSshProperties": {
+            "address": "127.0.0.1",
+            "port": 5500,
+            "username": "admin",
+            "password": "password",
+            "autoReconnect": true,
+            "autoReconnectIntervalMs": 10000
+          },
+          "pollTimeMs": 30000,
+          "warningTimeoutMs": 180000,
+          "errorTimeoutMs": 300000,
+          "address": 1,
+          "panSpeed": 12,
+          "tiltSpeed": 10,
+          "zoomSpeed": 3,
+          "focusSpeed": 4,
+          "privacyOnPreset": 15,
+          "privacyOffPreset": 1,
+          "presets": {
+            "1": {
+              "enabled": true,
+              "name": "Preset 1"
+            },
+            "2": {
+              "enabled": true,
+              "name": "Preset 2"
+            },
+            "3": {
+              "enabled": true,
+              "name": "Preset 3"
+            }
+          }
+        }
+      },
+      {
+        "key": "camera-2",
+        "name": "Camera 2",
+        "type": "viscacamera",
+        "group": "pluginDevices",
+        "properties": {
+          "control": {
+            "method": "tcpip",
+            "controlPortDevKey": "processor",
+            "controlPortNumber": 1,
+            "comParams": {
+              "baudRate": 9600,
+              "dataBits": 8,
+              "stopBits": 1,
+              "parity": "None",
+              "protocol": "RS232",
+              "hardwareHandshake": "None",
+              "softwareHandshake": "None"
             },
             "tcpSshProperties": {
               "address": "127.0.0.1",
-              "port": 23,
+              "port": 5500,
               "username": "admin",
               "password": "password",
               "autoReconnect": true,
@@ -65,6 +119,10 @@
             "2": {
               "enabled": true,
               "name": "Preset 2"
+            },
+            "3": {
+              "enabled": true,
+              "name": "Preset 3"
             }
           }
         }
@@ -88,6 +146,10 @@
             {
               "deviceKey": "camera-1",
               "joinStart": 1
+            },
+            {
+              "deviceKey": "camera-2",
+              "joinStart": 51
             }
           ]
         }
