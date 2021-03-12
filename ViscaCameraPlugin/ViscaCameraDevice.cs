@@ -248,11 +248,11 @@ namespace ViscaCameraPlugin
 			MonitorStatusFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
 
 			PowerFeedback = new BoolFeedback(() => Power);
-			AutoFocusFeedback = new BoolFeedback(() => AutoFocus);			
+			AutoFocusFeedback = new BoolFeedback(() => AutoFocus);
 			PanSpeedFeedback = new IntFeedback(() => (int)PanSpeed);
 			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
-			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);			
+			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
 			PresetCountFeedback = new IntFeedback(() => (int)PresetCount);
 			PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
 
@@ -336,14 +336,15 @@ namespace ViscaCameraPlugin
 				return;
 			}
 
-            Debug.Console(0, this, "Intializing presets");
+			Debug.Console(0, this, "Intializing presets");
 
-            
+
 			foreach (var preset in presets)
 			{
 				var item = preset;
 
-				Debug.Console(0, this, "Preset-{0} Enabled: {1}, Name: {2}", item.Key, item.Value.Enabled, item.Value.Name);				
+				Debug.Console(0, this, "Preset-{0} Enabled: {1}, Name: {2}, Index: {3}",
+					item.Key, item.Value.Enabled, item.Value.Name, item.Value.Index);
 
 				if (PresetNameFeedbacks == null)
 					PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
@@ -392,49 +393,55 @@ namespace ViscaCameraPlugin
 				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 
-			// power
+			// power on
 			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
+			// power off
+			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
+			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
-            trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
-            PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
+			// home
+			trilist.SetBoolSigAction(joinMap.Home.JoinNumber, sig => Move(sig, EDirection.Home));
 
-            //pan tilt
+			// pan
+			trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, sig => Move(sig, EDirection.PanLeft));
+			trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, sig => Move(sig, EDirection.PanRight));
+			trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, value => SetPanSpeed(value));
+			PanSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.PanSpeed.JoinNumber]);
 
-            trilist.SetBoolSigAction(joinMap.PanLeft.JoinNumber, o => Move(o, EDirection.PanLeft));
-            trilist.SetBoolSigAction(joinMap.PanRight.JoinNumber, o => Move(o, EDirection.PanRight));
-            trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, o => Move(o, EDirection.TiltUp));
-            trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, o => Move(o, EDirection.TiltDown));
+			// tilt
+			trilist.SetBoolSigAction(joinMap.TiltUp.JoinNumber, sig => Move(sig, EDirection.TiltUp));
+			trilist.SetBoolSigAction(joinMap.TiltDown.JoinNumber, sig => Move(sig, EDirection.TiltDown));
+			trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, value => SetTiltSpeed(value));
+			TiltSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.TiltSpeed.JoinNumber]);
 
-            trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, value => SetPanSpeed(value));
-            trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, value => SetTiltSpeed(value));
+			// zoom
+			trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, sig => Move(sig, EDirection.ZoomIn));
+			trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, sig => Move(sig, EDirection.ZoomOut));
+			trilist.SetUShortSigAction(joinMap.ZoomSpeed.JoinNumber, value => SetZoomSpeed(value));
+			ZoomSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.ZoomSpeed.JoinNumber]);
 
-            //zoom
+			// focus
+			trilist.SetBoolSigAction(joinMap.AutoFocus.JoinNumber, sig => Move(sig, EDirection.FocusAuto));
+			AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
 
-            trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, o => Move(o, EDirection.ZoomIn));
-            trilist.SetBoolSigAction(joinMap.ZoomOut.JoinNumber, o => Move(o, EDirection.ZoomOut));
+			// privacy
+			trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
+			trilist.SetBoolSigAction(joinMap.PrivacyOff.JoinNumber, sig => Move(sig, EDirection.PrivacyOff));
+			UpdateFeedbacks();
 
-            trilist.SetUShortSigAction(joinMap.ZoomSpeed.JoinNumber, value => SetZoomSpeed(value));
-
-
-            // privacy
-            trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
-            trilist.SetBoolSigAction(joinMap.PrivacyOff.JoinNumber, sig => Move(sig, EDirection.PrivacyOff));
 
 			// preset - analog recall & save by number
 			trilist.SetUShortSigAction(joinMap.PresetRecallByNumber.JoinNumber, value =>
 			{
-				RecallPreset(value);
-				Debug.Console(0, this, "LinkToApi PresetRecallByNumber[{0}] => RecallPreset({1})", joinMap.PresetRecallByNumber.JoinNumber, value);
+				RecallPresetbyNumber(value);
+				Debug.Console(1, this, "LinkToApi PresetRecallByNumber[{0}] => RecallPreset({1})", joinMap.PresetRecallByNumber.JoinNumber, value);
 			});
 			trilist.SetUShortSigAction(joinMap.PresetSaveByNumber.JoinNumber, value =>
 			{
-				SavePreset(value);
-				Debug.Console(0, this, "LinkToApi PresetSaveByNumber[{0}] => SavePreset({1})", joinMap.PresetSaveByNumber.JoinNumber, value);
+				SavePresetByNumber(value);
+				Debug.Console(1, this, "LinkToApi PresetSaveByNumber[{0}] => SavePreset({1})", joinMap.PresetSaveByNumber.JoinNumber, value);
 			});
-
-
-
 
 			// preset count feedback
 			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
@@ -445,7 +452,7 @@ namespace ViscaCameraPlugin
 			foreach (var item in PresetNameFeedbacks)
 			{
 				// preset number
-				var preset = (ushort) item.Key;
+				var preset = (ushort)item.Key;
 
 				// preset names
 				var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
@@ -457,11 +464,11 @@ namespace ViscaCameraPlugin
 				trilist.SetSigHeldAction(recallJoin, PresetSaveHoldTimeMs, () =>
 				{
 					SavePreset(preset);
-					Debug.Console(0, this, "LinkToApi PresetRecall[{0}]: SavePreset({1})", recallJoin, preset);
+					Debug.Console(1, this, "LinkToApi PresetRecall[{0}]: SavePreset({1})", recallJoin, preset);
 				}, () =>
 				{
 					RecallPreset(preset);
-					Debug.Console(0, this, "LinkToApi PresetRecall[{0}]: RecallPreset({1})", recallJoin, preset);
+					Debug.Console(1, this, "LinkToApi PresetRecall[{0}]: RecallPreset({1})", recallJoin, preset);
 				});
 
 				// preset save/store
@@ -469,9 +476,17 @@ namespace ViscaCameraPlugin
 				trilist.SetSigTrueAction(saveJoin, () =>
 				{
 					SavePreset(preset);
-					Debug.Console(0, this, "LinkToApi PresetSave[{0}]: SavePreset({1})", saveJoin, preset);
+					Debug.Console(1, this, "LinkToApi PresetSave[{0}]: SavePreset({1})", saveJoin, preset);
 				});
 			}
+
+			// online status 
+			trilist.OnlineStatusChange += (o, a) =>
+			{
+				if (!a.DeviceOnLine) return;
+				trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
+				UpdateFeedbacks();
+			};
 		}
 
 		private void UpdateFeedbacks()
@@ -481,12 +496,12 @@ namespace ViscaCameraPlugin
 			if (SocketStatusFeedback != null) SocketStatusFeedback.FireUpdate();
 			//MonitorStatusFeedback.FireUpdate();
 
-			PowerFeedback.FireUpdate();			
+			PowerFeedback.FireUpdate();
 			PanSpeedFeedback.FireUpdate();
 			TiltSpeedFeedback.FireUpdate();
 			ZoomSpeedFeedback.FireUpdate();
 			PresetCountFeedback.FireUpdate();
-			
+
 			foreach (var item in PresetNameFeedbacks)
 				item.Value.FireUpdate();
 		}
@@ -769,48 +784,82 @@ namespace ViscaCameraPlugin
 		/// <summary>
 		/// Recall preset
 		/// </summary>
-		/// <param name="value">preset 1...16</param>
+		/// <param name="preset">preset 1...16</param>
 		public void RecallPreset(uint preset)
 		{
-            if (preset < 0)
-                return;
+			if (preset <= 0)
+				return;
 
-            Debug.Console(2, this, "RecallPresetFromBridge: {0}", preset);
+			// set preset as value, if index is defined it will be 
+			// overwritten before the command is sent
+			var value = preset;
 
-            uint value = preset;
-
-            ViscaCameraPresetConfig presetValue = null;
-        
-            if (_config.Presets.TryGetValue(preset, out presetValue ))
-                value = presetValue.Index;
-
-            Debug.Console(2, this, "RecallPresetIndex: {0}", value);
+			ViscaCameraPresetConfig config;
+			if (_config.Presets.TryGetValue(preset, out config))
+			{
+				value = config.Index;
+				Debug.Console(1, this, "RecallPreset({0}) Index: {1}", preset, value);				
+			}
+			else
+			{
+				Debug.Console(1, this, "RecallPreset({0}) Index: not defined, using preset number", preset, value);
+			}
 
 			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(value), 0xFF };
 			SendBytes(cmd);
 		}
 
 		/// <summary>
+		/// Recall Preset by Number
+		/// </summary>
+		/// <param name="preset"></param>
+		public void RecallPresetbyNumber(uint preset)
+		{
+			if (preset <= 0)
+				return;
+
+			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(preset), 0xFF };
+			SendBytes(cmd);
+		}
+
+		/// <summary>
 		/// Save preset
 		/// </summary>
-		/// <param name="value">preset 1...16</param>
+		/// <param name="preset">preset 1...16</param>
 		public void SavePreset(uint preset)
 		{
-            if (preset < 0)
-                return;
+			if (preset <= 0)
+				return;
 
-            Debug.Console(2, this, "SavePresetFromBridge: {0}", preset);
+			// set preset as value, if index is defined it will be 
+			// overwritten before the command is sent
+			var value = preset;
 
-            uint value = preset;
-
-            ViscaCameraPresetConfig presetValue = null;
-
-            if (_config.Presets.TryGetValue(preset, out presetValue))
-                value = presetValue.Index;
-
-            Debug.Console(2, this, "SavePresetIndex: {0}", value);
+			ViscaCameraPresetConfig config;
+			if (_config.Presets.TryGetValue(preset, out config))
+			{
+				value = config.Index;
+				Debug.Console(1, this, "SavePreset({0}) Index: {1}", preset, value);
+			}
+			else
+			{
+				Debug.Console(1, this, "SavePreset({0}) Index: not defined, using preset number", preset, value);
+			}
 
 			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(value), 0xFF };
+			SendBytes(cmd);
+		}
+
+		/// <summary>
+		/// Save Preset by Number
+		/// </summary>
+		/// <param name="preset">preset 1...16</param>
+		public void SavePresetByNumber(uint preset)
+		{
+			if (preset <= 0)
+				return;
+
+			var cmd = new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(preset), 0xFF };
 			SendBytes(cmd);
 		}
 
