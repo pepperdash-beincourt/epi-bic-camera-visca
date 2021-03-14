@@ -725,7 +725,7 @@ namespace ViscaCameraPlugin
 					{
 						// state ? [moving] : [stop]
 						var cmd = state
-							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x30 + ZoomSpeed), 0xFF }
+							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x20 + ZoomSpeed), 0xFF }
 							: new byte[] { _address, 0x01, 0x04, 0x07, 0x00, 0xFF };
 						SendBytes(cmd);
 						break;
@@ -734,7 +734,7 @@ namespace ViscaCameraPlugin
 					{
 						// state ? [moving] : [stop]
 						var cmd = state
-							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x20 + ZoomSpeed), 0xFF }
+							? new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x30 + ZoomSpeed), 0xFF }
 							: new byte[] { _address, 0x01, 0x04, 0x07, 0x00, 0xFF };
 						SendBytes(cmd);
 						break;
