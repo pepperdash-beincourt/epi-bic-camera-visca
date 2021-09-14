@@ -394,10 +394,10 @@ namespace ViscaCameraPlugin
 			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 
 			// power on
-			trilist.SetBoolSigAction(joinMap.PowerOn.JoinNumber, SetPower);
+			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, PowerOn);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 			// power off
-			trilist.SetBoolSigAction(joinMap.PowerOff.JoinNumber, SetPower);
+			trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, PowerOff);
 			PowerFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
 			// home
@@ -426,8 +426,8 @@ namespace ViscaCameraPlugin
 			AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
 
 			// privacy
-			trilist.SetBoolSigAction(joinMap.PrivacyOn.JoinNumber, sig => Move(sig, EDirection.PrivacyOn));
-			trilist.SetBoolSigAction(joinMap.PrivacyOff.JoinNumber, sig => Move(sig, EDirection.PrivacyOff));
+			trilist.SetSigTrueAction(joinMap.PrivacyOn.JoinNumber, PowerOff);
+			trilist.SetSigTrueAction(joinMap.PrivacyOff.JoinNumber, PowerOn);
 			UpdateFeedbacks();
 
 
@@ -654,19 +654,33 @@ namespace ViscaCameraPlugin
 			SendBytes(cmd);
 		}
 
+
+
+		public void PowerOn()
+		{
+			SetPower(true);
+		}
+		public void PowerOff()
+		{
+			SetPower(false);
+		}
 		/// <summary>
 		/// Set power state
 		/// </summary>
 		/// <param name="state">power on/off</param>
 		public void SetPower(bool state)
 		{
-			// Power ? [send off] : [send on]
-			var cmd = Power
-				? new byte[] { _address, 0x01, 0x04, 0x00, 0x03, 0xFF }
-				: new byte[] { _address, 0x01, 0x04, 0x00, 0x02, 0xFF };
 
-			SendBytes(cmd);
+			if(state)
+			{
+				SendBytes(new byte[] {_address, 0x01, 0x04, 0x00, 0x02, 0xFF});
+			}
+			else 
+			{
+				SendBytes(new byte[] {_address, 0x01, 0x04, 0x00, 0x03, 0xFF});
+			}
 		}
+
 
 		/// <summary>
 		/// Move camera
