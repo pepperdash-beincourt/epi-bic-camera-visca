@@ -56,9 +56,6 @@ namespace ViscaCameraPlugin
 
 	public class ViscaCameraPresetConfig
 	{
-		[JsonProperty("enabled")]
-		public bool Enabled { get; set; }
-
 		[JsonProperty("name")]
 		public string Name { get; set; }
 

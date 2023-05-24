@@ -343,8 +343,8 @@ namespace ViscaCameraPlugin
 			{
 				var item = preset;
 
-				Debug.Console(0, this, "Preset-{0} Enabled: {1}, Name: {2}, Index: {3}",
-					item.Key, item.Value.Enabled, item.Value.Name, item.Value.Index);
+				Debug.Console(0, this, "Preset-{0} Name: {2}, Index: {3}",
+					item.Key, item.Value.Name, item.Value.Index);
 
 				if (PresetNameFeedbacks == null)
 					PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
@@ -390,8 +390,8 @@ namespace ViscaCameraPlugin
 			OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
 			// must null check so LinkToApi doesn't except when the device is TCP or UDP
 			if (SocketStatusFeedback != null)
-				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
-			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
+			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
 
 			// power on
 			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, PowerOn);
@@ -444,7 +444,7 @@ namespace ViscaCameraPlugin
 			});
 
 			// preset count feedback
-			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.PresetCount.JoinNumber]);
+			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
 			// preset name feedback + digital recall and save
 			// !!!NOTE!!!: 
 			// This foreach loop will not allow recalling/saving any preset that is not defined in the config
