@@ -89,7 +89,7 @@ namespace ViscaCameraPlugin
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Digital
 			});
-
+     
 		[JoinName("PowerOn")]
 		public JoinDataComplete PowerOn = new JoinDataComplete(
 			new JoinData()
@@ -159,6 +159,34 @@ namespace ViscaCameraPlugin
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Digital
 			});
+
+        [JoinName("FocusNear")]
+        public JoinDataComplete FocusNear = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 28,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                Description = "Focus Near",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("FocusFar")]
+        public JoinDataComplete FocusFar = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 29,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                Description = "FocusFar",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
 		[JoinName("AutoFocus")]
 		public JoinDataComplete AutoFocus = new JoinDataComplete(
@@ -263,6 +291,21 @@ namespace ViscaCameraPlugin
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
 				JoinType = eJoinType.Analog
 			});
+
+        [JoinName("FocusSpeed")]
+        public JoinDataComplete FocusSpeed = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 4,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                Description = "Focus Speed",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Analog
+            });
+
 
 		[JoinName("PresetRecallByNumber")]
 		public JoinDataComplete PresetRecallByNumber = new JoinDataComplete(
