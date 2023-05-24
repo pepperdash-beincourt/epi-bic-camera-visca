@@ -13,15 +13,15 @@ This repo is for VISCA camera plugin.
 ### Plugin Valid Communication methods
 
 ```c#
-Comm
-Tcpip
-Udp
+comm
+tcpip
+udp
 ```
 
 ### RS-232 Communications **UNTESTED**
 
 | Setting      | Value                       |
-|--------------|-----------------------------|
+| ------------ | --------------------------- |
 | Baud rate    | 9600 or 38,400 (selectable) |
 | Data bits    | 8                           |
 | Stop bits    | 1                           |
@@ -29,7 +29,7 @@ Udp
 | Flow control | none                        |
 
 #### RS-232 Configuration
-```
+```json
 {	
 	"key": "camera-1",
 	"name": "VISCA Camera",
@@ -62,29 +62,31 @@ Udp
 	"privacyOnPreset": 15,
 	"privacyOffPreset": 1,
 	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
+		"1": {			
+			"name": "Preset 1",
+			"index": 2
 		},
-		"2": {
-			"enabled": true,
-			"name": "Preset 2"
+		"2": {			
+			"name": "Preset 2",
+			"index": 1
 		}
 	}
 }
 ```
 
-### VISCA Over IP (TCP) **TESTING IN PROGRESS**
+### VISCA Over IP (TCP)
+
+TCP implement has been tested with 1Beyond cameras but does not work with Sony cameras.
 
 | Setting      | Value |
-|--------------|-------|
+| ------------ | ----- |
 | Default IP   |       |
 | Default Port | 5500  |
 | Username     |       |
 | Password     |       |
 
 #### RS-232 Configuration
-```
+```json
 {	
 	"key": "camera-1",
 	"name": "VISCA Camera",
@@ -114,13 +116,13 @@ Udp
 	"privacyOnPreset": 15,
 	"privacyOffPreset": 1,
 	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
+		"1": {			
+			"name": "Preset 1",
+			"index": 2
 		},
-		"2": {
-			"enabled": true,
-			"name": "Preset 2"
+		"2": {			
+			"name": "Preset 2",
+			"index": 1
 		}
 	}
 }
@@ -129,14 +131,14 @@ Udp
 ### VISCA Over IP (UDP) **NOT COMPLETE**
 
 | Setting      | Value |
-|--------------|-------|
+| ------------ | ----- |
 | Default IP   |       |
 | Default Port | 52381 |
 | Username     |       |
 | Password     |       |
 
 #### UDP Configuration
-```
+```json
 {	
 	"key": "camera-1",
 	"name": "VISCA Camera",
@@ -166,13 +168,13 @@ Udp
 	"privacyOnPreset": 15,
 	"privacyOffPreset": 1,
 	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
+		"1": {			
+			"name": "Preset 1",
+			"index": 2
 		},
-		"2": {
-			"enabled": true,
-			"name": "Preset 2"
+		"2": {			
+			"name": "Preset 2",
+			"index": 1
 		}
 	}
 }
@@ -182,13 +184,13 @@ Udp
 
 It is important to note the Vaddio OneLink Plugin is built on the Essentials Plugin Template and uses the **eiscApiAdvanced** type.  The following configuration is an example of the Bridge configuration.
 
-```
+```json
 {
-	"key": "plugin-bridge-1",
+	"key": "camera-bridge",
 	"uid": 11,
 	"name": "Communication Bridge",
 	"group": "api",
-	"type": "eiscApi",
+	"type": "eiscApiAdvanced",
 	"properties": {
 		"control": {
 		"tcpSshProperties": {
@@ -210,36 +212,38 @@ It is important to note the Vaddio OneLink Plugin is built on the Essentials Plu
 ## SiMPL Bridge Joins
 
 ### Digitals
-| dig-o                                    | I/O     | dig-i               |
-|------------------------------------------|---------|---------------------|
-| Tilt Up                                  | 1       |                     |
-| TiltDown                                 | 2       |                     |
-| Pan Left                                 | 3       |                     |
-| Pan Right                                | 4       |                     |
-| Zoom In                                  | 5       |                     |
-| Zoom Out                                 | 6       |                     |
-| Power On                                 | 7       | Power On Feedback   |
-| Power Off                                | 8       | Power Off Feedback  |
-|                                          | 9       | Is Online Feedback  |
-| Home                                     | 10      |                     |
-| Preset Recall (Press)/Preset Save (Hold) | 11 - 26 |                     |
-| Auto Focus                               | 30      | Auto Focus Feedback |
-| Preset Save (Press)                      | 31 - 46 |                     |
-| Privacy On                               | 48      |                     |
-| Privacy Off                              | 49      |                     |
+| dig-o                                    | I/O     | dig-i                 |
+| ---------------------------------------- | ------- | --------------------- |
+| Tilt Up                                  | 1       |                       |
+| TiltDown                                 | 2       |                       |
+| Pan Left                                 | 3       |                       |
+| Pan Right                                | 4       |                       |
+| Zoom In                                  | 5       |                       |
+| Zoom Out                                 | 6       |                       |
+| Power On                                 | 7       | Power On feedback     |
+| Power Off                                | 8       | Power Off feedback    |
+|                                          | 9       | Is Online feedback    |
+| Home                                     | 10      |                       |
+| Preset Recall (Press)/Preset Save (Hold) | 11 - 26 |                       |
+| Auto Focus                               | 29      | Auto Focus feedback   |
+|                                          | 30      | Preset saved feedback |
+| Preset Save (Press)                      | 31 - 46 |                       |
+| Privacy On                               | 48      |                       |
+| Privacy Off                              | 49      |                       |
 
 ## Analogs
-| an_o        | I/O | an_i                 |
-|-------------|-----|----------------------|
-| Tilt Speed  | 1   | Tilt Speed Feedback  |
-| Pan Speed   | 2   | Pan Speed Feedback   |
-| Zoom Speed  | 3   | Zoom Speed Feedback  |
-| Focus Speed | 4   | Focus Speed Feedback |
-|             | 11  | Preset Count         |
-|             | 50  | Status               |
+| an_o                    | I/O | an_i                       |
+| ----------------------- | --- | -------------------------- |
+| Pan Speed               | 1   | Pan Speed feedback         |
+| Tilt Speed              | 2   | Tilt Speed feedback        |
+| Zoom Speed              | 3   | Zoom Speed feedback        |
+| Focus Speed             | 4   | Focus Speed feedback       |
+| Preset recall by number | 11  | Number of presets feedback |
+| Preset save by number   | 12  |                            |
+|                         | 50  | Socket status feedback     |
 
 ## Serials
 | serial-o | I/O     | serial-i     |
-|----------|---------|--------------|
+| -------- | ------- | ------------ |
 |          | 1       | Device Name  |
 |          | 11 - 26 | Preset Names |

@@ -79,7 +79,7 @@ namespace ViscaCameraPlugin
 		/// <summary>
 		/// Preset count feedback
 		/// </summary>
-		public IntFeedback PresetCountFeedback { get; private set; }
+		public IntFeedback NumberOfPresetsFeedback { get; private set; }
 		/// <summary>
 		/// Preset count property
 		/// </summary>
@@ -90,7 +90,7 @@ namespace ViscaCameraPlugin
 			{
 				if (_presetCount == value) return;
 				_presetCount = (int)value;
-				PresetCountFeedback.FireUpdate();
+				NumberOfPresetsFeedback.FireUpdate();
 			}
 		}
 
@@ -253,7 +253,7 @@ namespace ViscaCameraPlugin
 			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
 			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
-			PresetCountFeedback = new IntFeedback(() => (int)PresetCount);
+			NumberOfPresetsFeedback = new IntFeedback(() => (int)PresetCount);
 			PresetNameFeedbacks = new Dictionary<uint, StringFeedback>();
 
 			if (_config.PollTimeMs > 0 && _config.PollTimeMs != _pollTimeMs)
@@ -444,7 +444,8 @@ namespace ViscaCameraPlugin
 			});
 
 			// preset count feedback
-			PresetCountFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
+			NumberOfPresetsFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
+			
 			// preset name feedback + digital recall and save
 			// !!!NOTE!!!: 
 			// This foreach loop will not allow recalling/saving any preset that is not defined in the config
@@ -500,7 +501,7 @@ namespace ViscaCameraPlugin
 			PanSpeedFeedback.FireUpdate();
 			TiltSpeedFeedback.FireUpdate();
 			ZoomSpeedFeedback.FireUpdate();
-			PresetCountFeedback.FireUpdate();
+			NumberOfPresetsFeedback.FireUpdate();
 
 			foreach (var item in PresetNameFeedbacks)
 				item.Value.FireUpdate();
