@@ -7,6 +7,7 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core;
+using Crestron.SimplSharp;
 
 namespace ViscaCameraPlugin
 {
@@ -28,6 +29,7 @@ namespace ViscaCameraPlugin
 		private readonly long _warningTimeoutMs = 60000; // 60s
 		private readonly long _errorTimeoutMs = 180000; // 180s
 
+        CTimer PollTimer;
 
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
@@ -286,10 +288,14 @@ namespace ViscaCameraPlugin
 			if (_config.PrivacyOffPreset > 0 && _config.PrivacyOffPreset <= PresetMax)
 				_privacyOffPreset = config.PrivacyOffPreset;
 
-			if (_config.Control.Method.ToString().ToLower() == "udp")
-				_useHeader = true;
+		    if (_config.Control.Method.ToString().ToLower() == "udp")
+		        {
+		        _useHeader = true;
+		        // start polling since comm monitor won't work
+                PollTimer = new CTimer(o => Poll(), null, _pollTimeMs, _pollTimeMs);
+                }
 
-			_comms = comms;
+		    _comms = comms;
 			_comms.BytesReceived += Handle_BytesRecieved;
 			_commsMonitor = new GenericCommunicationMonitor(this, _comms, _pollTimeMs, _warningTimeoutMs, _errorTimeoutMs, Poll);
 
@@ -299,7 +305,9 @@ namespace ViscaCameraPlugin
 				// device is configured for IP control
 				_commsIsSerial = false;
 				socket.ConnectionChange += socket_ConnectionChange;
-				SocketStatusFeedback = new IntFeedback(() => (int)socket.ClientStatus);
+			   
+			    SocketStatusFeedback = new IntFeedback(() => (int) socket.ClientStatus);
+    
 			}
 			else
 			{
@@ -389,9 +397,12 @@ namespace ViscaCameraPlugin
 
 			OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
 			// must null check so LinkToApi doesn't except when the device is TCP or UDP
-			if (SocketStatusFeedback != null)
+			
+            
+            if (SocketStatusFeedback != null)
 				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
-			//MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+			else
+                MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
 
 			// power on
 			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, PowerOn);
@@ -422,6 +433,11 @@ namespace ViscaCameraPlugin
 			ZoomSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.ZoomSpeed.JoinNumber]);
 
 			// focus
+            trilist.SetBoolSigAction(joinMap.FocusNear.JoinNumber, sig => Move(sig, EDirection.FocusNear));
+            trilist.SetBoolSigAction(joinMap.FocusFar.JoinNumber, sig => Move(sig, EDirection.FocusFar));
+            trilist.SetUShortSigAction(joinMap.FocusSpeed.JoinNumber, value => SetFocusSpeed(value));
+            FocusSpeedFeedback.LinkInputSig(trilist.UShortInput[joinMap.FocusSpeed.JoinNumber]);
+
 			trilist.SetBoolSigAction(joinMap.AutoFocus.JoinNumber, sig => Move(sig, EDirection.FocusAuto));
 			AutoFocusFeedback.LinkInputSig(trilist.BooleanInput[joinMap.AutoFocus.JoinNumber]);
 
