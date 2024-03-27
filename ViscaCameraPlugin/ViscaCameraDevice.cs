@@ -8,6 +8,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core;
 using Crestron.SimplSharp;
+using System.Linq;
 
 namespace ViscaCameraPlugin
 {
@@ -19,6 +20,7 @@ namespace ViscaCameraPlugin
 		private readonly bool _commsIsSerial;
 		private readonly bool _useHeader;
 		private uint _counter = 0;
+        private CommunicationGather _gather;
 
 		private readonly ViscaCameraConfig _config;
 
@@ -296,7 +298,9 @@ namespace ViscaCameraPlugin
                 }
 
 		    _comms = comms;
-			_comms.BytesReceived += Handle_BytesRecieved;
+            _gather = new CommunicationGather(_comms, (char)0xFF);
+            _gather.LineReceived += Handle_BytesRecieved;
+			//_comms.BytesReceived += Handle_BytesRecieved;
 			_commsMonitor = new GenericCommunicationMonitor(this, _comms, _pollTimeMs, _warningTimeoutMs, _errorTimeoutMs, Poll);
 
 			var socket = _comms as ISocketStatus;
@@ -319,7 +323,6 @@ namespace ViscaCameraPlugin
 
 			InitializePresets(_config.Presets);
 		}
-
 
 		/// <summary>
 		/// Use the custom activate to connect the device and start the comms monitor
@@ -596,22 +599,44 @@ namespace ViscaCameraPlugin
 			}
 		}
 
-		private void Handle_BytesRecieved(object sender, GenericCommMethodReceiveBytesArgs args)
+        public static string ByteArrayToHexString(byte[] byteArray)
+        {
+            return BitConverter.ToString(byteArray).Replace("-", "");
+        }
+
+        public static bool ContainsSequence(byte[] byteArray, byte[] sequence)
+        {
+            return Enumerable.Range(0, byteArray.Length - sequence.Length + 1)
+                             .Any(i => sequence.SequenceEqual(byteArray.Skip(i).Take(sequence.Length)));
+        }
+
+        private void Handle_BytesRecieved(object sender, GenericCommMethodReceiveTextArgs args)
 		{
-			if (args == null || args.Bytes == null)
-			{
-				Debug.Console(2, this, "Handle_BytesRecieved args or args.Bytes is null");
-				return;
-			}
+            try
+            {
+                byte[] byteArray = System.Text.Encoding.Unicode.GetBytes(args.Text);
 
-			Debug.Console(2, this, "Handle_BytesRecieved: {0}", args.Bytes);
+                Debug.Console(2, this, "Handle_BytesRecieved: {0}", args.Text);
+                if (byteArray[2] == 0x50)
+                {
+                    Debug.Console(2, this, "power status");
+                    if (byteArray[4] == 0x02)
+                    {
+                        Power = true;
+                        Debug.Console(2, this, "power on");
+                    }
+                    else if (byteArray[4] == 0x03)
+                    {
+                        Power = false;
+                        Debug.Console(2, this, "power off");
+                    }
+                }
 
-			var byteBuffer = new byte[_commsByteBuffer.Length + args.Bytes.Length];
-			_commsByteBuffer.CopyTo(byteBuffer, 0);
-			args.Bytes.CopyTo(byteBuffer, _commsByteBuffer.Length);
-
-			Debug.Console(2, this, "Handle_BytesRecieved byteBuffer: {0}", ComTextHelper.GetEscapedText(byteBuffer));
-
+            }
+            catch (Exception err)
+            {
+                Debug.Console(2, this, "Error parsing feedback: {0}", err);
+            }
 			// TODO [ ] complete method
 
 			// power on:	0xy0, 0x50, 0x02, 0xFF
