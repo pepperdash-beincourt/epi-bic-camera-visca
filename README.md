@@ -18,7 +18,7 @@ Tcpip
 Udp
 ```
 
-### RS-232 Communications **UNTESTED**
+### RS-232 Communications
 
 | Setting      | Value                       |
 | ------------ | --------------------------- |
@@ -28,51 +28,7 @@ Udp
 | Parity       | None                        |
 | Flow control | none                        |
 
-#### RS-232 Configuration
-```
-{	
-	"key": "camera-1",
-	"name": "VISCA Camera",
-	"type": "visca",
-	"group": "pluginDevices",
-	"properties": {
-		"control": {
-			"method": "comm",
-			"controlPortDevKey": "exampleControlPortDevKey",
-			"controlPortNumber": 1,
-			"comParams": {
-				"baudRate": 9600,
-				"dataBits": 8,
-				"stopBits": 1,
-				"parity": "None",
-				"protocol": "RS232",
-				"hardwareHandshake": "None",
-				"softwareHandshake": "None"
-			},
-		},
-	},
-	"pollTimeMs": 30000,
-	"address": 1,
-	"panSpeed": 12,
-	"tiltSpeed": 10,
-	"zoomSpeed": 3,
-	"focusSpeed": 4,
-	"privacyOnPreset": 15,
-	"privacyOffPreset": 1,
-	"presets": [
-		{
-			"id": 15,
-			"name": "Privacy On"
-		},
-		{
-			"id": 2,
-			"name": "Preset 2"
-		}
-	]
-}
-```
-
-### VISCA Over IP (TCP) **TESTING IN PROGRESS**
+### VISCA-over-IP via TCP/IP Communications
 
 | Setting      | Value |
 | ------------ | ----- |
@@ -81,50 +37,7 @@ Udp
 | Username     |       |
 | Password     |       |
 
-#### RS-232 Configuration
-```
-{	
-	"key": "camera-1",
-	"name": "VISCA Camera",
-	"type": "visca",
-	"group": "pluginDevices",
-	"properties": {
-		"control": {
-			"method": "tcpip",
-			"tcpSshProperties": {
-				"address": "127.0.0.1",
-				"port": 5500,
-				"username": "admin",
-				"password": "password",
-				"autoReconnect": true,
-				"autoReconnectIntervalMs": 10000
-			}
-		},
-	},
-	"pollTimeMs": 30000,
-	"warningTimeoutMs": 180000,
-	"errorTimeoutMs": 300000,
-	"address": 1,
-	"panSpeed": 12,
-	"tiltSpeed": 10,
-	"zoomSpeed": 3,
-	"focusSpeed": 4,
-	"privacyOnPreset": 15,
-	"privacyOffPreset": 1,
-	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
-		},
-		"2": {
-			"enabled": true,
-			"name": "Preset 2"
-		}
-	}
-}
-```
-
-### VISCA Over IP (UDP) **NOT COMPLETE**
+### VISCA-over-IP via UDP Communications
 
 | Setting      | Value |
 | ------------ | ----- |
@@ -133,45 +46,34 @@ Udp
 | Username     |       |
 | Password     |       |
 
-#### UDP Configuration
-```
+#### Device Configuration
+
+```json
 {	
 	"key": "camera-1",
 	"name": "VISCA Camera",
 	"type": "visca",
 	"group": "pluginDevices",
 	"properties": {
-		"control": {
-			"method": "udp",
-			"tcpSshProperties": {
-				"address": "127.0.0.1",
-				"port": 52381,
-				"username": "admin",
-				"password": "password",
-				"autoReconnect": true,
-				"autoReconnectIntervalMs": 10000
+		"control": {},
+		"pollTimeMs": 30000,
+		"address": 1,
+		"panSpeed": 12,
+		"tiltSpeed": 10,
+		"zoomSpeed": 3,
+		"focusSpeed": 4,
+		"privacyOnPreset": 15,
+		"privacyOffPreset": 1,
+		"presets": [
+			{
+				"id": 15,
+				"name": "Privacy On"
+			},
+			{
+				"id": 2,
+				"name": "Preset 2"
 			}
-		},
-	},
-	"pollTimeMs": 30000,
-	"warningTimeoutMs": 180000,
-	"errorTimeoutMs": 300000,
-	"address": 1,
-	"panSpeed": 12,
-	"tiltSpeed": 10,
-	"zoomSpeed": 3,
-	"focusSpeed": 4,
-	"privacyOnPreset": 15,
-	"privacyOffPreset": 1,
-	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
-		},
-		"2": {
-			"enabled": true,
-			"name": "Preset 2"
-		}
+		]
 	}
 }
 ```
