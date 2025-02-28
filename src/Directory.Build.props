@@ -4,8 +4,8 @@
     <InformationalVersion>$(Version)</InformationalVersion>
     <Authors>PepperDash Technologies</Authors>
     <Company>PepperDash Technologies</Company>
-    <Product>PepperDash Panasonic Projector</Product>
-    <Copyright>Copyright © 2024</Copyright>
+    <Product>PepperDash Essentials Plugin Camera Visca</Product>
+    <Copyright>Copyright © 2025</Copyright>
     <RepositoryUrl>https://github.com/PepperDash-Engineering/epi-camera-visca</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Crestron; 4series</PackageTags>
