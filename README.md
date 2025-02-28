@@ -21,7 +21,7 @@ Udp
 ### RS-232 Communications **UNTESTED**
 
 | Setting      | Value                       |
-|--------------|-----------------------------|
+| ------------ | --------------------------- |
 | Baud rate    | 9600 or 38,400 (selectable) |
 | Data bits    | 8                           |
 | Stop bits    | 1                           |
@@ -52,8 +52,6 @@ Udp
 		},
 	},
 	"pollTimeMs": 30000,
-	"warningTimeoutMs": 180000,
-	"errorTimeoutMs": 300000,
 	"address": 1,
 	"panSpeed": 12,
 	"tiltSpeed": 10,
@@ -61,23 +59,23 @@ Udp
 	"focusSpeed": 4,
 	"privacyOnPreset": 15,
 	"privacyOffPreset": 1,
-	"presets": {
-		"1": {
-			"enabled": true,
-			"name": "Preset 1"
+	"presets": [
+		{
+			"id": 15,
+			"name": "Privacy On"
 		},
-		"2": {
-			"enabled": true,
+		{
+			"id": 2,
 			"name": "Preset 2"
 		}
-	}
+	]
 }
 ```
 
 ### VISCA Over IP (TCP) **TESTING IN PROGRESS**
 
 | Setting      | Value |
-|--------------|-------|
+| ------------ | ----- |
 | Default IP   |       |
 | Default Port | 5500  |
 | Username     |       |
@@ -129,7 +127,7 @@ Udp
 ### VISCA Over IP (UDP) **NOT COMPLETE**
 
 | Setting      | Value |
-|--------------|-------|
+| ------------ | ----- |
 | Default IP   |       |
 | Default Port | 52381 |
 | Username     |       |
@@ -180,7 +178,7 @@ Udp
 
 ### Bridge Configuration
 
-It is important to note the Vaddio OneLink Plugin is built on the Essentials Plugin Template and uses the **eiscApiAdvanced** type.  The following configuration is an example of the Bridge configuration.
+The following configuration is an example of the Bridge configuration.
 
 ```
 {
@@ -210,36 +208,41 @@ It is important to note the Vaddio OneLink Plugin is built on the Essentials Plu
 ## SiMPL Bridge Joins
 
 ### Digitals
-| dig-o                                    | I/O     | dig-i               |
-|------------------------------------------|---------|---------------------|
-| Tilt Up                                  | 1       |                     |
-| TiltDown                                 | 2       |                     |
-| Pan Left                                 | 3       |                     |
-| Pan Right                                | 4       |                     |
-| Zoom In                                  | 5       |                     |
-| Zoom Out                                 | 6       |                     |
-| Power On                                 | 7       | Power On Feedback   |
-| Power Off                                | 8       | Power Off Feedback  |
-|                                          | 9       | Is Online Feedback  |
-| Home                                     | 10      |                     |
-| Preset Recall (Press)/Preset Save (Hold) | 11 - 26 |                     |
-| Auto Focus                               | 30      | Auto Focus Feedback |
-| Preset Save (Press)                      | 31 - 46 |                     |
-| Privacy On                               | 48      |                     |
-| Privacy Off                              | 49      |                     |
+| dig-o                                     | I/O     | dig-i                 |
+| ----------------------------------------- | ------- | --------------------- |
+| Tilt Up                                   | 1       |                       |
+| TiltDown                                  | 2       |                       |
+| Pan Left                                  | 3       |                       |
+| Pan Right                                 | 4       |                       |
+| Zoom In                                   | 5       |                       |
+| Zoom Out                                  | 6       |                       |
+| Power On                                  | 7       | Power On Feedback     |
+| Power Off                                 | 8       |                       |
+|                                           | 9       | Is Online Feedback    |
+| Home                                      | 10      |                       |
+| Preset Select (Press)/Preset Store (Hold) | 11 - 26 |                       |
+| Focus Near                                | 28      |                       |
+| Focus Far                                 | 29      |                       |
+|                                           | 30      | Preset Store Feedback |
+| Preset Store (Press)                      | 31 - 46 |                       |
+| Privacy On                                | 48      |                       |
+| Privacy Off                               | 49      |                       |
+| Trigger Auto Focus                        | 50      |                       |
 
 ## Analogs
-| an_o        | I/O | an_i                 |
-|-------------|-----|----------------------|
-| Tilt Speed  | 1   | Tilt Speed Feedback  |
-| Pan Speed   | 2   | Pan Speed Feedback   |
-| Zoom Speed  | 3   | Zoom Speed Feedback  |
-| Focus Speed | 4   | Focus Speed Feedback |
-|             | 11  | Preset Count         |
-|             | 50  | Status               |
+| an_o                    | I/O | an_i                       |
+| ----------------------- | --- | -------------------------- |
+| Pan Speed               | 1   | Pan Speed Feedback         |
+| Tilt Speed              | 2   | Tilt Speed Feedback        |
+| Zoom Speed              | 3   | Zoom Speed Feedback        |
+| Focus Speed             | 4   | Focus Speed Feedback       |
+| Preset Select by Number | 11  | Number of Presets Feedback |
+| Preset Store by Number  | 12  |                            |
+|                         | 50  | Status                     |
 
 ## Serials
-| serial-o | I/O     | serial-i     |
-|----------|---------|--------------|
-|          | 1       | Device Name  |
-|          | 11 - 26 | Preset Names |
+| serial-o           | I/O     | serial-i     |
+| ------------------ | ------- | ------------ |
+|                    | 1       | Device Name  |
+|                    | 11 - 26 | Preset Names |
+| Device Comms (WIP) | 50      |              |

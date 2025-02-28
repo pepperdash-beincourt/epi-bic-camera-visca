@@ -191,8 +191,8 @@ namespace ViscaCameraPlugin
 		/// <summary>
 		/// Camera preset saved
 		/// </summary>
-		[JoinName("PresetSavedFeedback")]
-		public JoinDataComplete PresetSavedFeedback = new JoinDataComplete(
+		[JoinName("PresetStoredFeedback")]
+		public JoinDataComplete PresetStoredFeedback = new JoinDataComplete(
 			new JoinData
 			{
 				JoinNumber = 30,
@@ -200,7 +200,7 @@ namespace ViscaCameraPlugin
 			},
 			new JoinMetadata
 			{
-				Description = "Camera preset saved Feedback",
+				Description = "Camera preset stored Feedback",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
 				JoinType = eJoinType.Digital
 			});
