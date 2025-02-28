@@ -363,7 +363,7 @@ namespace ViscaCameraPlugin
 				else FocusStop();
 			});
 
-			trilist.SetSigTrueAction(joinMap.AutoFocus.JoinNumber, TriggerAutoFocus);
+			trilist.SetSigTrueAction(joinMap.TriggerAutoFocus.JoinNumber, TriggerAutoFocus);
 
 			trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, panSpeed => PanSpeed = panSpeed);
 			trilist.SetUShortSigAction(joinMap.TiltSpeed.JoinNumber, tiltSpeed => TiltSpeed = tiltSpeed);
@@ -380,15 +380,15 @@ namespace ViscaCameraPlugin
 			trilist.SetSigTrueAction(joinMap.PrivacyOff.JoinNumber, PrivacyOff);
 
 			// preset - analog recall & save by number
-			trilist.SetUShortSigAction(joinMap.PresetRecallByNumber.JoinNumber, value =>
+			trilist.SetUShortSigAction(joinMap.PresetSelectByNumber.JoinNumber, value =>
 			{
 				PresetSelect(value);
-				Debug.Console(1, this, "LinkToApi PresetRecallByNumber[{0}] => RecallPreset({1})", joinMap.PresetRecallByNumber.JoinNumber, value);
+				Debug.Console(1, this, "LinkToApi PresetSelectByNumber[{0}] => RecallPreset({1})", joinMap.PresetSelectByNumber.JoinNumber, value);
 			});
-			trilist.SetUShortSigAction(joinMap.PresetSaveByNumber.JoinNumber, value =>
+			trilist.SetUShortSigAction(joinMap.PresetStoreByNumber.JoinNumber, value =>
 			{
 				PresetStore(value,"");
-				Debug.Console(1, this, "LinkToApi PresetSaveByNumber[{0}] => SavePreset({1})", joinMap.PresetSaveByNumber.JoinNumber, value);
+				Debug.Console(1, this, "LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
 			});
 
 			// preset count feedback
@@ -396,7 +396,7 @@ namespace ViscaCameraPlugin
 			// preset name feedback + digital recall and save
 			// !!!NOTE!!!: 
 			// This foreach loop will not allow recalling/saving any preset that is not defined in the config
-			// Use the analog PresetRecallByNumber/PresetSaveByNumber to recall presets that are NOT defined in config
+			// Use the analog PresetSelectByNumber/PresetStoreByNumber to recall presets that are NOT defined in config
 			foreach (var item in PresetNamesFeedbacks)
 			{
 				// preset number

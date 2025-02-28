@@ -337,8 +337,8 @@ namespace ViscaCameraPlugin
 				JoinType = eJoinType.Analog
 			});
 
-		[JoinName("PresetRecallByNumber")]
-		public JoinDataComplete PresetRecallByNumber = new JoinDataComplete(
+		[JoinName("PresetSelectByNumber")]
+		public JoinDataComplete PresetSelectByNumber = new JoinDataComplete(
 			new JoinData()
 			{
 				JoinNumber = 11,
@@ -346,13 +346,13 @@ namespace ViscaCameraPlugin
 			},
 			new JoinMetadata()
 			{
-				Description = "Preset Recall by Number",
+				Description = "Preset select by number",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Analog
 			});
 
-		[JoinName("PresetSaveByNumber")]
-		public JoinDataComplete PresetSaveByNumber = new JoinDataComplete(
+		[JoinName("PresetStoreByNumber")]
+		public JoinDataComplete PresetStoreByNumber = new JoinDataComplete(
 			new JoinData()
 			{
 				JoinNumber = 12,
@@ -360,7 +360,7 @@ namespace ViscaCameraPlugin
 			},
 			new JoinMetadata()
 			{
-				Description = "Preset Save by Number",
+				Description = "Preset store by number",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Analog
 			});
