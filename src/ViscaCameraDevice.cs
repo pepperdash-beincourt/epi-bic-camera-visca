@@ -237,15 +237,6 @@ namespace ViscaCameraPlugin
 
 			Debug.Console(0, this, "Intializing presets");
 
-			var handler = PresetsListHasChanged;
-			if (handler != null)
-			{
-				handler(this, null);
-			}
-		}
-
-		private void OnPresetsListHasChanged()
-		{
 			foreach (var preset in PresetsDict)
 			{
 				var id = (int)preset.Key;
@@ -258,6 +249,15 @@ namespace ViscaCameraPlugin
 			PresetNamesFeedbacks.Clear();
 			PresetNamesFeedbacks = PresetsDict.ToDictionary(x => x.Key, x => new StringFeedback(() => x.Value.Name));
 
+			var handler = PresetsListHasChanged;
+			if (handler != null)
+			{
+				handler(this, null);
+			}
+		}
+
+		private void OnPresetsListHasChanged()
+		{
 			NumberOfPresetsFeedback.FireUpdate();
 			foreach (var feedback in PresetNamesFeedbacks)
 				feedback.Value.FireUpdate();
