@@ -11,7 +11,7 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice, ICommunicationMonitor, IRoutingSource,
-		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, IHasCameraPresets
+		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl
 	{
 		public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
 
@@ -122,8 +122,7 @@ namespace ViscaCameraPlugin
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
 
-		public List<CameraPreset> Presets { get; private set; }
-		public event EventHandler<EventArgs> PresetsListHasChanged;
+		public Dictionary<uint, ViscaCameraPresetsConfig> Presets { get; set; } 
 		public Dictionary<uint, StringFeedback> PresetNamesFeedbacks { get; private set; }
 
 		public BoolFeedback OnlineFeedback { get { return CommunicationMonitor.IsOnlineFeedback; } }
@@ -160,8 +159,6 @@ namespace ViscaCameraPlugin
 			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
 			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
-			NumberOfPresetsFeedback = new IntFeedback(() => NumberOfPresets);
-			PresetNamesFeedbacks = new Dictionary<uint, StringFeedback>();
 
 			_pollTimeMs = config.PollTimeMs > 0 ? config.PollTimeMs : _pollTimeMs;
 			_address = (config.Address > 0 && config.Address <= AddressMax)
@@ -205,9 +202,11 @@ namespace ViscaCameraPlugin
 				InitializeCamera();
 			}
 
-			Presets = new List<CameraPreset>();
+			Presets = new Dictionary<uint, ViscaCameraPresetsConfig>();
+			PresetNamesFeedbacks = new Dictionary<uint, StringFeedback>();
+			NumberOfPresetsFeedback = new IntFeedback(() => NumberOfPresets);
 			InitializePresets(config.Presets);
-		} 
+		}
 
 
 		/// <summary>
@@ -234,30 +233,22 @@ namespace ViscaCameraPlugin
 			}
 
 			Debug.Console(0, this, "Intializing {0} presets", presets.Count());
-			
+
+			uint index = 1;
 			foreach (var preset in presets)
 			{
 				var id = preset.Id;
-				var description = preset.Name;
-				var defined = !string.IsNullOrEmpty(description);
-				var isDefineable = !string.IsNullOrEmpty(description);
-				Debug.Console(0, this, "Initializing Preset-{0}: {1}, defined-{2}, isDefineable-{3}", 
-					id, description, defined, isDefineable);
-				
-				Presets.Add(new CameraPreset(id, description, defined, isDefineable));
+				var name = preset.Name;
+
+				Debug.Console(0, this, "Initializing Preset-{0}: Name-{1}, Id-{2}",
+					index, name, id);
+
+				Presets.Add(index, preset);
+				PresetNamesFeedbacks.Add(index, new StringFeedback(() => name));
+				index++;
 			}
-
-			PresetsListHasChanged += (o, a) => OnPresetsListHasChanged();
-
-			PresetNamesFeedbacks = Presets.ToDictionary(x => (uint)x.ID, x => new StringFeedback(() => x.Description));
+			
 			NumberOfPresets = Presets.Count();
-			foreach (var feedback in PresetNamesFeedbacks)
-				feedback.Value.FireUpdate();
-		}
-
-		private void OnPresetsListHasChanged()
-		{
-			NumberOfPresetsFeedback.FireUpdate();
 			foreach (var feedback in PresetNamesFeedbacks)
 				feedback.Value.FireUpdate();
 		}
@@ -300,8 +291,8 @@ namespace ViscaCameraPlugin
 
 			// power
 			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, CameraOn);
-			trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, CameraOff); 
-			
+			trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, CameraOff);
+
 			CameraIsOffFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 			CameraIsOffFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
@@ -333,7 +324,6 @@ namespace ViscaCameraPlugin
 				if (sig) TiltUp();
 				else TiltStop();
 			});
-
 
 			// zoom
 			trilist.SetBoolSigAction(joinMap.ZoomIn.JoinNumber, sig =>
@@ -386,47 +376,30 @@ namespace ViscaCameraPlugin
 			});
 			trilist.SetUShortSigAction(joinMap.PresetStoreByNumber.JoinNumber, value =>
 			{
-				PresetStore(value,"");
+				PresetStore(value, "");
 				Debug.Console(1, this, "LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
 			});
 
-			// preset count feedback
+			// presets
 			NumberOfPresetsFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
-			// preset name feedback + digital recall and save
-			// !!!NOTE!!!: 
-			// This foreach loop will not allow recalling/saving any preset that is not defined in the config
-			// Use the analog PresetSelectByNumber/PresetStoreByNumber to recall presets that are NOT defined in config
-			foreach (var item in PresetNamesFeedbacks)
+			foreach (var preset in PresetNamesFeedbacks)
 			{
-				// preset number
-				var preset = (ushort)item.Key;
+				var presetNumber = preset.Key;
+				var nameJoin = joinMap.PresetNames.JoinNumber + presetNumber - 1;
+				Debug.Console(1, "Linking: join-{0}, Preset-{1} Name-{2}", nameJoin, preset.Key, preset.Value);
+				preset.Value.LinkInputSig(trilist.StringInput[nameJoin]);
+				preset.Value.FireUpdate();
 
-				// preset names
-				var nameJoin = preset + joinMap.PresetNames.JoinNumber - 1;
-				var nameFeedback = item.Value;
-				nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+				var selectJoin = joinMap.PresetSelect.JoinNumber + presetNumber - 1;
+				var storeJoin = joinMap.PresetStore.JoinNumber + presetNumber - 1;
 
-				// preset recall
-				var selectJoin = preset + joinMap.PresetSelect.JoinNumber - 1;
-				trilist.SetSigHeldAction(selectJoin, PresetStoreHoldTimeMs, () =>
-				{
-					PresetStore(preset, "");
-					Debug.Console(1, this, "LinkToApi PresetSelect[{0}]: SavePreset({1})", selectJoin, preset);
-				}, () =>
-				{
-					PresetSelect(preset);					
-					Debug.Console(1, this, "LinkToApi PresetSelect[{0}]: RecallPreset({1})", selectJoin, preset);
-				});
-
-				// preset save/store
-				var saveJoin = preset + joinMap.PresetStore.JoinNumber - 1;
-				trilist.SetSigTrueAction(saveJoin, () =>
-				{
-					PresetStore(preset, "");
-					Debug.Console(1, this, "LinkToApi PresetStore[{0}]: SavePreset({1})", saveJoin, preset);
-				});
+				trilist.SetSigHeldAction(selectJoin, PresetStoreHoldTimeMs, 
+					() => PresetStore((int) presetNumber, ""),
+					() => PresetSelect((int) presetNumber));
+				trilist.SetSigTrueAction(storeJoin, () => PresetStore((int)presetNumber,""));
 			}
 
+			// custom commands
 			trilist.SetStringSigAction(joinMap.DeviceComs.JoinNumber, SendCustomCommand);
 
 			// online status 
@@ -441,7 +414,7 @@ namespace ViscaCameraPlugin
 		private void UpdateFeedbacks()
 		{
 			OnlineFeedback.FireUpdate();
-			if (SocketStatusFeedback != null) 
+			if (SocketStatusFeedback != null)
 				SocketStatusFeedback.FireUpdate();
 			MonitorStatusFeedback.FireUpdate();
 
@@ -463,7 +436,7 @@ namespace ViscaCameraPlugin
 
 			OnlineFeedback.FireUpdate();
 			// must null check so LinkToApi doesn't except when the device is TCP or UDP
-			if (SocketStatusFeedback != null) 
+			if (SocketStatusFeedback != null)
 				SocketStatusFeedback.FireUpdate();
 
 			if (args.Client.IsConnected) InitializeCamera();
@@ -627,7 +600,7 @@ namespace ViscaCameraPlugin
 
 		public void PanRight()
 		{
-			SendBytes(new byte[] {_address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x02, 0x03, 0xFF});
+			SendBytes(new byte[] { _address, 0x01, 0x06, 0x01, Convert.ToByte(PanSpeed), Convert.ToByte(TiltSpeed), 0x02, 0x03, 0xFF });
 		}
 
 		public void PanStop()
@@ -652,7 +625,7 @@ namespace ViscaCameraPlugin
 
 		public void ZoomIn()
 		{
-			SendBytes(new byte[] {_address, 0x01, 0x04, 0x07, Convert.ToByte(0x20 + ZoomSpeed), 0xFF});
+			SendBytes(new byte[] { _address, 0x01, 0x04, 0x07, Convert.ToByte(0x20 + ZoomSpeed), 0xFF });
 		}
 
 		public void ZoomOut()
@@ -690,24 +663,26 @@ namespace ViscaCameraPlugin
 
 		public void PositionHome()
 		{
-			var cmd =  new byte[] { _address, 0x01, 0x06, 0x04, 0xFF };
+			var cmd = new byte[] { _address, 0x01, 0x06, 0x04, 0xFF };
 			SendBytes(cmd);
 		}
 
 		public void PresetSelect(int preset)
 		{
-			if (Presets[preset] == null) return;
-
-			var p = Presets[preset];
-			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(p.ID), 0xFF });
+			ViscaCameraPresetsConfig p;
+			if (Presets.TryGetValue((uint)preset, out p))
+			{
+				SendBytes(new byte[] {_address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(p.Id), 0xFF});
+			}
 		}
 
 		public void PresetStore(int preset, string description)
 		{
-			if (Presets[preset] == null) return;
-
-			var p = Presets[preset];
-			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(p.ID), 0xFF });
+			ViscaCameraPresetsConfig p;
+			if (Presets.TryGetValue((uint)preset, out p))
+			{
+				SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(p.Id), 0xFF });
+			}
 		}
 
 		public void PrivacyOn()
