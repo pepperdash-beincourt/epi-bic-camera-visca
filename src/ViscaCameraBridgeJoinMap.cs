@@ -8,12 +8,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("TiltUp")]
 		public JoinDataComplete TiltUp = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 1,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Tilt Up",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -22,12 +22,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("TiltDown")]
 		public JoinDataComplete TiltDown = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 2,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Tilt Down",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -36,12 +36,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PanLeft")]
 		public JoinDataComplete PanLeft = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 3,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Pan Left",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -50,12 +50,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PanRight")]
 		public JoinDataComplete PanRight = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 4,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Pan Right",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -64,12 +64,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("ZoomIn")]
 		public JoinDataComplete ZoomIn = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 5,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Zoom In",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -78,12 +78,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("ZoomOut")]
 		public JoinDataComplete ZoomOut = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 6,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Zoom Out",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -92,12 +92,12 @@ namespace ViscaCameraPlugin
      
 		[JoinName("PowerOn")]
 		public JoinDataComplete PowerOn = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 7,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Camera power on",
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -106,12 +106,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PowerOff")]
 		public JoinDataComplete PowerOff = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 8,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Camera power off",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -120,12 +120,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("IsOnline")]
 		public JoinDataComplete IsOnline = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 9,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Is Online",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -134,12 +134,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("Home")]
 		public JoinDataComplete Home = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 10,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Home",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -148,12 +148,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PresetSelect")]
 		public JoinDataComplete PresetSelect = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 11,
 				JoinSpan = 16
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Preset select (press), store (hold)",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -162,12 +162,12 @@ namespace ViscaCameraPlugin
 
         [JoinName("FocusNear")]
         public JoinDataComplete FocusNear = new JoinDataComplete(
-            new JoinData()
+            new JoinData
             {
                 JoinNumber = 28,
                 JoinSpan = 1
             },
-            new JoinMetadata()
+            new JoinMetadata
             {
                 Description = "Focus Near",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -176,12 +176,12 @@ namespace ViscaCameraPlugin
 
         [JoinName("FocusFar")]
         public JoinDataComplete FocusFar = new JoinDataComplete(
-            new JoinData()
+            new JoinData
             {
                 JoinNumber = 29,
                 JoinSpan = 1
             },
-            new JoinMetadata()
+            new JoinMetadata
             {
                 Description = "FocusFar",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -208,12 +208,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PresetStore")]
 		public JoinDataComplete PresetStore = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 31,
 				JoinSpan = 16
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Preset store",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -222,12 +222,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PrivacyOn")]
 		public JoinDataComplete PrivacyOn = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 48,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Privacy On",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -236,12 +236,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PrivacyOff")]
 		public JoinDataComplete PrivacyOff = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 49,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Privacy Off",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -250,12 +250,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("TriggerAutoFocus")]
 		public JoinDataComplete TriggerAutoFocus = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 50,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Trigger auto focus",
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -269,12 +269,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PanSpeed")]
 		public JoinDataComplete PanSpeed = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 1,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Pan Speed",
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -283,12 +283,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("TiltSpeed")]
 		public JoinDataComplete TiltSpeed = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 2,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Tilt Speed",
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -297,12 +297,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("ZoomSpeed")]
 		public JoinDataComplete ZoomSpeed = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 3,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Zoom Speed",
 				JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -311,12 +311,12 @@ namespace ViscaCameraPlugin
 
         [JoinName("FocusSpeed")]
         public JoinDataComplete FocusSpeed = new JoinDataComplete(
-            new JoinData()
+            new JoinData
             {
                 JoinNumber = 4,
                 JoinSpan = 1
             },
-            new JoinMetadata()
+            new JoinMetadata
             {
                 Description = "Focus Speed",
                 JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -325,12 +325,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("NumberOfPresets")]
 		public JoinDataComplete NumberOfPresets = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 11,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Number of configured presets",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -339,12 +339,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PresetSelectByNumber")]
 		public JoinDataComplete PresetSelectByNumber = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 11,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Preset select by number",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -353,12 +353,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PresetStoreByNumber")]
 		public JoinDataComplete PresetStoreByNumber = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 12,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Preset store by number",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -367,12 +367,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("SocketStatus")]
 		public JoinDataComplete SocketStatus = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 50,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Returns Socket Status when using VISCA-over-IP",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -386,12 +386,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("DeviceName")]
 		public JoinDataComplete DeviceName = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 1,
 				JoinSpan = 1
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Name",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -414,12 +414,12 @@ namespace ViscaCameraPlugin
 
 		[JoinName("PresetName")]
 		public JoinDataComplete PresetNames = new JoinDataComplete(
-			new JoinData()
+			new JoinData
 			{
 				JoinNumber = 11,
 				JoinSpan = 16
 			},
-			new JoinMetadata()
+			new JoinMetadata
 			{
 				Description = "Preset Name",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,

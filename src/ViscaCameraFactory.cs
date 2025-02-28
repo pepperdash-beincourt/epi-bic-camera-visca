@@ -10,10 +10,10 @@ namespace ViscaCameraPlugin
         public ViscaCameraFactory()
         {
             // Set the minimum Essentials Framework Version
-            MinimumEssentialsFrameworkVersion = "1.6.9";
+            MinimumEssentialsFrameworkVersion = "1.11.1";
 
             // In the constructor we initialize the list with the typenames that will build an instance of this device
-            TypeNames = new List<string>() { "visca", "viscacamera" };
+            TypeNames = new List<string> { "visca", "viscacamera" };
         }
 
         // Builds and returns an instance of EssentialsPluginDeviceTemplate

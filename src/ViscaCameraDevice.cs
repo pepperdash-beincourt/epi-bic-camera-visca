@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
@@ -20,7 +19,7 @@ namespace ViscaCameraPlugin
 		private readonly IBasicCommunication _comms;
 		private readonly bool _commsIsSerial;
 		private readonly bool _useHeader;
-		private uint _counter = 0;
+		private uint _counter;
 
 		private readonly byte _address = 0x81;
 		private const uint AddressMax = 7;
@@ -188,7 +187,7 @@ namespace ViscaCameraPlugin
 			_comms = comms;
 			var commsGather = new CommunicationGather(_comms, (char)0xFF);
 			commsGather.LineReceived += Handle_BytesRecieved;
-
+			
 			var socket = _comms as ISocketStatus;
 			if (socket != null)
 			{
