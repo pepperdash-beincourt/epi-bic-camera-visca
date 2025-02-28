@@ -108,13 +108,13 @@ namespace ViscaCameraPlugin
 		}
 
 		private int _numberOfPresets;
-		public uint NumberOfPresets
+		public int NumberOfPresets
 		{
-			get { return (uint)_numberOfPresets; }
+			get { return _numberOfPresets; }
 			set
 			{
 				if (_numberOfPresets == value) return;
-				_numberOfPresets = (int)value;
+				_numberOfPresets = value;
 				NumberOfPresetsFeedback.FireUpdate();
 			}
 		}
@@ -161,7 +161,7 @@ namespace ViscaCameraPlugin
 			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
 			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
-			NumberOfPresetsFeedback = new IntFeedback(() => (int)NumberOfPresets);
+			NumberOfPresetsFeedback = new IntFeedback(() => NumberOfPresets);
 			PresetNamesFeedbacks = new Dictionary<uint, StringFeedback>();
 
 			_pollTimeMs = config.PollTimeMs > 0 ? config.PollTimeMs : _pollTimeMs;
@@ -237,23 +237,25 @@ namespace ViscaCameraPlugin
 
 			Debug.Console(0, this, "Intializing presets");
 
+			Presets.Clear();
+			PresetNamesFeedbacks.Clear();
+
 			foreach (var preset in PresetsDict)
 			{
 				var id = (int)preset.Key;
 				var description = preset.Value.Name;
 				var defined = string.IsNullOrEmpty(description);
 				var isDefineable = defined;
+				Debug.Console(0, this, "Initializing Preset-{0}: {1}, defined-{2}, isDefineable-{3}", 
+					id, description, defined, isDefineable);
+				
 				Presets.Add(new CameraPreset(id, description, defined, isDefineable));
+				PresetNamesFeedbacks = PresetsDict.ToDictionary(x => (uint)id, x => new StringFeedback(() => description));
 			}
 
-			PresetNamesFeedbacks.Clear();
-			PresetNamesFeedbacks = PresetsDict.ToDictionary(x => x.Key, x => new StringFeedback(() => x.Value.Name));
-
-			var handler = PresetsListHasChanged;
-			if (handler != null)
-			{
-				handler(this, null);
-			}
+			NumberOfPresets = Presets.Count();
+			foreach (var feedback in PresetNamesFeedbacks)
+				feedback.Value.FireUpdate();
 		}
 
 		private void OnPresetsListHasChanged()
