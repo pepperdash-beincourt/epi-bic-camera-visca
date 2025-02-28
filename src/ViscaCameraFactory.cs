@@ -28,7 +28,7 @@ namespace ViscaCameraPlugin
 		        return null;
 	        }
             
-            var propertiesConfig = dc.Properties.ToObject<ViscaCameraConfig>();
+            var propertiesConfig = dc.Properties.ToObject<Camera>();
 	        if (propertiesConfig == null)
 	        {
 		        Debug.Console(2, "[{0}] VISCA Camera: failed to read properties config for {1}", dc.Key, dc.Name);
