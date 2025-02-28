@@ -187,7 +187,8 @@ namespace ViscaCameraPlugin
 			_comms = comms;
 			var commsGather = new CommunicationGather(_comms, (char)0xFF);
 			commsGather.LineReceived += Handle_BytesRecieved;
-			
+			CommunicationMonitor = new GenericCommunicationMonitor(this, _comms, _pollTimeMs, 120000, 300000, Poll);
+
 			var socket = _comms as ISocketStatus;
 			if (socket != null)
 			{
