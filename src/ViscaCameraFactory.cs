@@ -29,15 +29,7 @@ namespace ViscaCameraPlugin
 	        }
             
             var propertiesConfig = dc.Properties.ToObject<ViscaCameraConfig>();
-	        if (propertiesConfig != null)
-	        {
-				Debug.Console(2, "[{0}] {1} {2} presets found", dc.Key, dc.Name, propertiesConfig.Presets.Count);
-				foreach (var preset in propertiesConfig.Presets)
-				{
-					Debug.Console(2, "[{0}] {1} Preset{2}: {3}", dc.Key, dc.Name, preset.Id, preset.Name);
-				}
-		        return new ViscaCameraDevice(dc.Key, dc.Name, comms, propertiesConfig);
-	        }
+	        if (propertiesConfig != null) return new ViscaCameraDevice(dc.Key, dc.Name, comms, propertiesConfig);
 
 	        Debug.Console(2, "[{0}] VISCA Camera: failed to read properties config for {1}", dc.Key, dc.Name);
 	        return null;

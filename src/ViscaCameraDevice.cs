@@ -245,11 +245,11 @@ namespace ViscaCameraPlugin
 					id, description, defined, isDefineable);
 				
 				Presets.Add(new CameraPreset(id, description, defined, isDefineable));
-				PresetNamesFeedbacks = presets.ToDictionary(x => (uint)id, x => new StringFeedback(() => description));
 			}
 
 			PresetsListHasChanged += (o, a) => OnPresetsListHasChanged();
 
+			PresetNamesFeedbacks = Presets.ToDictionary(x => (uint)x.ID, x => new StringFeedback(() => x.Description));
 			NumberOfPresets = Presets.Count();
 			foreach (var feedback in PresetNamesFeedbacks)
 				feedback.Value.FireUpdate();
