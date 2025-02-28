@@ -122,7 +122,6 @@ namespace ViscaCameraPlugin
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
 
-		public Dictionary<uint, Preset> PresetsDict { get; private set; } 
 		public List<CameraPreset> Presets { get; private set; }
 		public event EventHandler<EventArgs> PresetsListHasChanged;
 		public Dictionary<uint, StringFeedback> PresetNamesFeedbacks { get; private set; }
@@ -147,7 +146,7 @@ namespace ViscaCameraPlugin
 		/// <param name="name">device name</param>
 		/// <param name="config">device config</param>
 		/// <param name="comms">IBasicCommunications</param>
-		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, Camera config)
+		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
 			: base(key, name)
 		{
 			Debug.Console(0, this, "Constructing new VISCA Camera instance");
@@ -206,9 +205,8 @@ namespace ViscaCameraPlugin
 				InitializeCamera();
 			}
 
-			PresetsListHasChanged += (o,a) => OnPresetsListHasChanged();
-			PresetsDict = config.Presets.ToDictionary(x => (uint)x.Id);
-			InitializePresets(PresetsDict);
+			Presets = new List<CameraPreset>();
+			InitializePresets(config.Presets);
 		} 
 
 
@@ -227,7 +225,7 @@ namespace ViscaCameraPlugin
 		}
 
 
-		private void InitializePresets(Dictionary<uint, Preset> presets)
+		private void InitializePresets(List<ViscaCameraPresetsConfig> presets)
 		{
 			if (presets == null)
 			{
@@ -235,23 +233,22 @@ namespace ViscaCameraPlugin
 				return;
 			}
 
-			Debug.Console(0, this, "Intializing presets");
-
-			Presets.Clear();
-			PresetNamesFeedbacks.Clear();
-
-			foreach (var preset in PresetsDict)
+			Debug.Console(0, this, "Intializing {0} presets", presets.Count());
+			
+			foreach (var preset in presets)
 			{
-				var id = (int)preset.Key;
-				var description = preset.Value.Name;
-				var defined = string.IsNullOrEmpty(description);
-				var isDefineable = defined;
+				var id = preset.Id;
+				var description = preset.Name;
+				var defined = !string.IsNullOrEmpty(description);
+				var isDefineable = !string.IsNullOrEmpty(description);
 				Debug.Console(0, this, "Initializing Preset-{0}: {1}, defined-{2}, isDefineable-{3}", 
 					id, description, defined, isDefineable);
 				
 				Presets.Add(new CameraPreset(id, description, defined, isDefineable));
-				PresetNamesFeedbacks = PresetsDict.ToDictionary(x => (uint)id, x => new StringFeedback(() => description));
+				PresetNamesFeedbacks = presets.ToDictionary(x => (uint)id, x => new StringFeedback(() => description));
 			}
+
+			PresetsListHasChanged += (o, a) => OnPresetsListHasChanged();
 
 			NumberOfPresets = Presets.Count();
 			foreach (var feedback in PresetNamesFeedbacks)

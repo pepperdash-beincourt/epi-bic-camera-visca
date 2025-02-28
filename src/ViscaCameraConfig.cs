@@ -4,7 +4,7 @@ using PepperDash.Essentials.Core;
 
 namespace ViscaCameraPlugin
 {
-	public class Camera
+	public class ViscaCameraConfig
 	{
 		[JsonProperty("control")]
 		public EssentialsControlPropertiesConfig Control { get; set; }
@@ -34,15 +34,15 @@ namespace ViscaCameraPlugin
 		public int PollTimeMs { get; set; }
 
 		[JsonProperty("presets")]
-		public List<Preset> Presets { get; set; }
+		public List<ViscaCameraPresetsConfig> Presets { get; set; }
 
-		public Camera()
+		public ViscaCameraConfig()
 		{
-			Presets = new List<Preset>();
+			Presets = new List<ViscaCameraPresetsConfig>();
 		}
 	}
 
-	public class Preset
+	public class ViscaCameraPresetsConfig
 	{
 		[JsonProperty("name")]
 		public string Name { get; set; }

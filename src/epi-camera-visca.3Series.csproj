@@ -97,7 +97,7 @@
   <ItemGroup>
     <Compile Include="ViscaCameraBridgeJoinMap.cs" />
     <Compile Include="ViscaCameraDevice.cs" />
-    <Compile Include="Camera.cs" />
+    <Compile Include="ViscaCameraConfig.cs" />
     <Compile Include="ViscaCameraFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="configurationFile.json" />
