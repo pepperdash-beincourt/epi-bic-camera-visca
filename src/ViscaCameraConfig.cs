@@ -9,12 +9,6 @@ namespace ViscaCameraPlugin
 		[JsonProperty("control")]
 		public EssentialsControlPropertiesConfig Control { get; set; }
 
-		[JsonProperty("deviceId")]
-		public long DeviceId { get; set; }
-
-		[JsonProperty("enabled")]
-		public bool Enabled { get; set; }
-
 		[JsonProperty("address")]
 		public uint Address { get; set; }
 
@@ -37,33 +31,24 @@ namespace ViscaCameraPlugin
 		public uint PrivacyOffPreset { get; set; }
 
 		[JsonProperty("pollTimeMs")]
-		public long PollTimeMs { get; set; }
-
-		[JsonProperty("warningTimeoutMs")]
-		public long WarningTimeoutMs { get; set; }
-
-		[JsonProperty("errorTimeoutMs")]
-		public long ErrorTimeoutMs { get; set; }
+		public int PollTimeMs { get; set; }
 
 		[JsonProperty("presets")]
-		public Dictionary<uint, ViscaCameraPresetConfig> Presets { get; set; }
+		public List<ViscaCameraPresetsConfig> Presets { get; set; }
 
 		public ViscaCameraConfig()
 		{
-			Presets = new Dictionary<uint, ViscaCameraPresetConfig>();
+			Presets = new List<ViscaCameraPresetsConfig>();
 		}
 	}
 
-	public class ViscaCameraPresetConfig
+	public class ViscaCameraPresetsConfig
 	{
-		[JsonProperty("enabled")]
-		public bool Enabled { get; set; }
-
 		[JsonProperty("name")]
 		public string Name { get; set; }
 
-        [JsonProperty("index")]
-        public uint Index { get; set; }
+        [JsonProperty("id")]
+        public int Id { get; set; }
 
 
 	}
