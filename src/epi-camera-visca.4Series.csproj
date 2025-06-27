@@ -38,9 +38,9 @@
 		<None Remove="../output\epi-visca-camera.4Series.1.0.0-local.cplz" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<None Remove="../output\epi-visca-camera.4Series.1.0.0-local.cplz" />
-	</ItemGroup>
+	
+	
+	
 
 	<ItemGroup>
 		<PackageReference Include="PepperDashEssentials" Version="2.7.3">
