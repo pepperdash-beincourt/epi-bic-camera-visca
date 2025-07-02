@@ -24,7 +24,7 @@
     ]
   ],  
   "branches": [
-    "main, feature",
+    "main",
     {
       "name": "replace-me-feature-branch",
       "prerelease": "replace-me-prerelease",
