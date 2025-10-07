@@ -11,9 +11,18 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice, ICommunicationMonitor, IRoutingSource,
-		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl
+		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities
 	{
-		public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+
+        public bool CanPan { get; private set; }
+
+        public bool CanTilt { get; private set; }
+
+		public bool CanZoom { get; private set; }
+
+        public bool CanFocus { get; private set; }
+
+        public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
 
 		public StatusMonitorBase CommunicationMonitor { get; private set; }
 		private readonly IBasicCommunication _comms;
@@ -152,14 +161,15 @@ namespace ViscaCameraPlugin
 
 
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="key">device key</param>
-		/// <param name="name">device name</param>
-		/// <param name="config">device config</param>
-		/// <param name="comms">IBasicCommunications</param>
-		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key">device key</param>
+        /// <param name="name">device name</param>
+        /// <param name="config">device config</param>
+        /// <param name="comms">IBasicCommunications</param>
+        public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
 			: base(key, name)
 		{
 			Debug.Console(0, this, "Constructing new VISCA Camera instance");
@@ -184,7 +194,12 @@ namespace ViscaCameraPlugin
 			ZoomSpeed = config.ZoomSpeed == 0 ? ZoomSpeedDefault : config.ZoomSpeed;
 			FocusSpeed = config.FocusSpeed == 0 ? FocusSpeedDefault : config.FocusSpeed;
 
-			_privacyOnPreset = config.PrivacyOnPreset;
+			CanPan = true;
+            CanTilt = true;
+            CanZoom = true;
+            CanFocus = true;
+
+            _privacyOnPreset = config.PrivacyOnPreset;
 			_privacyOffPreset = config.PrivacyOffPreset;
 
 			if (config.Control.Method.ToString().ToLower() == "udp")
