@@ -707,6 +707,11 @@ namespace ViscaCameraPlugin
 			}
 		}
 
+		public void PresetRecallRaw(int preset)
+		{
+			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(preset), 0xFF });
+		}
+
 		public void PresetStore(int preset, string description)
 		{
 			ViscaCameraPresetsConfig p;
