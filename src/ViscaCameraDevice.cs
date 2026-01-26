@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
@@ -559,6 +560,15 @@ namespace ViscaCameraPlugin
 				if (byteArray[2] == 0x50)
 				{
 					Debug.Console(2, this, "power status");
+
+					Debug.Console(2, this, "byteArray.Length == {0}", byteArray.Length);
+
+					if(byteArray.Length < 3)
+					{
+						Debug.Console(2, this, "byteArray.Length < 3, power status is held in byteArray[3]");
+						return;
+					}
+
 					// power on:	0xy0, 0x50, 0x02, 0xFF
 					if (byteArray[3] == 0x02)
 					{
