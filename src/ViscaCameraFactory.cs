@@ -19,7 +19,7 @@ namespace ViscaCameraPlugin
         // Builds and returns an instance of EssentialsPluginDeviceTemplate
         public override EssentialsDevice BuildDevice(PepperDash.Essentials.Core.Config.DeviceConfig dc)
         {
-            Debug.LogDebug("Factory Attempting to create new device from type: {dcType}", dc.Type);			
+            Debug.LogDebug("Factory Attempting to create new device from type: {0}", dc.Type);			
 
 	        var comms = CommFactory.CreateCommForDevice(dc);
 	        if (comms == null)

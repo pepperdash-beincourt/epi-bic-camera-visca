@@ -179,9 +179,9 @@ namespace ViscaCameraPlugin
 			OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
 
 			MonitorStatusFeedback = new IntFeedback("monitorStatus", () => (int)CommunicationMonitor.Status);
-			CameraIsOffFeedback = new BoolFeedback("CameraIsOffF", () => CameraIsOff);
+			CameraIsOffFeedback = new BoolFeedback("cameraIsOff", () => CameraIsOff);
 			AutoFocusFeedback = new BoolFeedback("autoFocus", () => AutoFocus);
-			PanSpeedFeedback = new IntFeedback("pansSpeed", () => (int)PanSpeed);
+			PanSpeedFeedback = new IntFeedback("panSpeed", () => (int)PanSpeed);
 			TiltSpeedFeedback = new IntFeedback("tiltSpeed", () => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback("zoomSpeed", () => (int)ZoomSpeed);
 			FocusSpeedFeedback = new IntFeedback("focusSpeed", () => (int)FocusSpeed);
@@ -557,16 +557,17 @@ namespace ViscaCameraPlugin
 			{
 				byte[] byteArray = System.Text.Encoding.GetEncoding(28591).GetBytes(args.Text);
 
-				this.LogVerbose("Handle_BytesRecieved: {argsText}", ComTextHelper.GetEscapedText(byteArray));
+				this.LogVerbose("Handle_BytesRecieved: {byteArray}", ComTextHelper.GetEscapedText(byteArray));
+				
+				if (byteArray.Length < 3)
+				{
+					this.LogVerbose("byteArray.Length < 3, power status is held in byteArray[2]");
+					return;
+				}
+
 				if (byteArray[1] == 0x50)
 				{
 					this.LogVerbose("Handle_BytesRecieved: power status");
-
-					if (byteArray.Length < 3)
-					{
-						this.LogVerbose("byteArray.Length < 3, power status is held in byteArray[2]");
-						return;
-					}
 
 					// power on: [90][50][02]
 					if (byteArray[2] == 0x02)
@@ -626,15 +627,13 @@ namespace ViscaCameraPlugin
 		public void CameraOn()
 		{
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x00, 0x02, 0xFF });
-			Thread.Sleep(1000);
-			Poll();
+			new CTimer(o => Poll(), null, 1000);
 		}
 
 		public void CameraOff()
 		{
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x00, 0x03, 0xFF });
-			Thread.Sleep(1000);
-			Poll();
+			new CTimer(o => Poll(), null, 1000);
 		}
 
 		public void PanLeft()
@@ -725,6 +724,11 @@ namespace ViscaCameraPlugin
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(preset), 0xFF });
 		}
 
+		/// <summary>
+		/// Recalls a camera preset using a raw VISCA preset identifier
+		/// </summary>
+		/// <param name="preset"></param>
+		/// <param name="description"></param>
 		public void PresetStore(int preset, string description)
 		{
 			ViscaCameraPresetsConfig p;

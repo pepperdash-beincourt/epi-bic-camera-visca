@@ -43,7 +43,7 @@
 	
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.18.0-feature-add-IKeyed-to-interfaces.2">
+		<PackageReference Include="PepperDashEssentials" Version="2.24.0">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
