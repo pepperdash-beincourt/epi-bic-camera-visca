@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
@@ -561,9 +562,9 @@ namespace ViscaCameraPlugin
 				{
 					this.LogVerbose("Handle_BytesRecieved: power status");
 
-					if (byteArray.Length < 2)
+					if (byteArray.Length < 3)
 					{
-						this.LogVerbose("byteArray.Length < 4, power status is held in byteArray[4]");
+						this.LogVerbose("byteArray.Length < 3, power status is held in byteArray[2]");
 						return;
 					}
 
@@ -625,11 +626,15 @@ namespace ViscaCameraPlugin
 		public void CameraOn()
 		{
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x00, 0x02, 0xFF });
+			Thread.Sleep(1000);
+			Poll();
 		}
 
 		public void CameraOff()
 		{
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x00, 0x03, 0xFF });
+			Thread.Sleep(1000);
+			Poll();
 		}
 
 		public void PanLeft()
