@@ -4,6 +4,7 @@ using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.Cameras;
@@ -14,15 +15,15 @@ namespace ViscaCameraPlugin
 		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities
 	{
 
-        public bool CanPan { get; private set; }
+		public bool CanPan { get; private set; }
 
-        public bool CanTilt { get; private set; }
+		public bool CanTilt { get; private set; }
 
 		public bool CanZoom { get; private set; }
 
-        public bool CanFocus { get; private set; }
+		public bool CanFocus { get; private set; }
 
-        public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+		public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
 
 		public StatusMonitorBase CommunicationMonitor { get; private set; }
 		private readonly IBasicCommunication _comms;
@@ -162,27 +163,27 @@ namespace ViscaCameraPlugin
 
 
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="key">device key</param>
-        /// <param name="name">device name</param>
-        /// <param name="config">device config</param>
-        /// <param name="comms">IBasicCommunications</param>
-        public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="key">device key</param>
+		/// <param name="name">device name</param>
+		/// <param name="config">device config</param>
+		/// <param name="comms">IBasicCommunications</param>
+		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
 			: base(key, name)
 		{
-			Debug.Console(0, this, "Constructing new VISCA Camera instance");
+			this.LogInformation("Constructing new VISCA Camera instance");
 
 			OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
 
-			MonitorStatusFeedback = new IntFeedback(() => (int)CommunicationMonitor.Status);
-			CameraIsOffFeedback = new BoolFeedback(() => CameraIsOff);
-			AutoFocusFeedback = new BoolFeedback(() => AutoFocus);
-			PanSpeedFeedback = new IntFeedback(() => (int)PanSpeed);
-			TiltSpeedFeedback = new IntFeedback(() => (int)TiltSpeed);
-			ZoomSpeedFeedback = new IntFeedback(() => (int)ZoomSpeed);
-			FocusSpeedFeedback = new IntFeedback(() => (int)FocusSpeed);
+			MonitorStatusFeedback = new IntFeedback("monitorStatus", () => (int)CommunicationMonitor.Status);
+			CameraIsOffFeedback = new BoolFeedback("CameraIsOffF", () => CameraIsOff);
+			AutoFocusFeedback = new BoolFeedback("autoFocus", () => AutoFocus);
+			PanSpeedFeedback = new IntFeedback("pansSpeed", () => (int)PanSpeed);
+			TiltSpeedFeedback = new IntFeedback("tiltSpeed", () => (int)TiltSpeed);
+			ZoomSpeedFeedback = new IntFeedback("zoomSpeed", () => (int)ZoomSpeed);
+			FocusSpeedFeedback = new IntFeedback("focusSpeed", () => (int)FocusSpeed);
 
 			_pollTimeMs = config.PollTimeMs > 0 ? config.PollTimeMs : _pollTimeMs;
 			_address = (config.Address > 0 && config.Address <= AddressMax)
@@ -195,11 +196,11 @@ namespace ViscaCameraPlugin
 			FocusSpeed = config.FocusSpeed == 0 ? FocusSpeedDefault : config.FocusSpeed;
 
 			CanPan = true;
-            CanTilt = true;
-            CanZoom = true;
-            CanFocus = true;
+			CanTilt = true;
+			CanZoom = true;
+			CanFocus = true;
 
-            _privacyOnPreset = config.PrivacyOnPreset;
+			_privacyOnPreset = config.PrivacyOnPreset;
 			_privacyOffPreset = config.PrivacyOffPreset;
 
 			if (config.Control.Method.ToString().ToLower() == "udp")
@@ -219,9 +220,9 @@ namespace ViscaCameraPlugin
 			{
 				// device is configured for IP control
 				_commsIsSerial = false;
-				socket.ConnectionChange += socket_ConnectionChange;
+				socket.ConnectionChange += Socket_ConnectionChange;
 
-				SocketStatusFeedback = new IntFeedback(() => (int)socket.ClientStatus);
+				SocketStatusFeedback = new IntFeedback("socketStatus", () => (int)socket.ClientStatus);
 			}
 			else
 			{
@@ -233,8 +234,8 @@ namespace ViscaCameraPlugin
 
 			Presets = new Dictionary<uint, ViscaCameraPresetsConfig>();
 			PresetNamesFeedbacks = new Dictionary<uint, StringFeedback>();
-			NumberOfPresetsFeedback = new IntFeedback(() => NumberOfPresets);
-			PresetStoredFeedback = new BoolFeedback(() => PresetStored);
+			NumberOfPresetsFeedback = new IntFeedback("numberOfPresets", () => NumberOfPresets);
+			PresetStoredFeedback = new BoolFeedback("presetStored", () => PresetStored);
 			InitializePresets(config.Presets);
 		}
 
@@ -258,11 +259,11 @@ namespace ViscaCameraPlugin
 		{
 			if (presets == null)
 			{
-				Debug.Console(0, this, "InitializePresets failed, preset dictionary is null");
+				this.LogInformation("InitializePresets failed, preset dictionary is null");
 				return;
 			}
 
-			Debug.Console(0, this, "Intializing {0} presets", presets.Count());
+			this.LogInformation("Intializing {0} presets", presets.Count());
 
 			uint index = 1;
 			foreach (var preset in presets)
@@ -270,11 +271,12 @@ namespace ViscaCameraPlugin
 				var id = preset.Id;
 				var name = preset.Name;
 
-				Debug.Console(0, this, "Initializing Preset-{0}: Name-{1}, Id-{2}",
+				this.LogInformation("Initializing Preset-{0}: Name-{1}, Id-{2}",
 					index, name, id);
 
+
 				Presets.Add(index, preset);
-				PresetNamesFeedbacks.Add(index, new StringFeedback(() => name));
+				PresetNamesFeedbacks.Add(index, new StringFeedback("preset" + id, () => name));
 				index++;
 			}
 
@@ -308,8 +310,8 @@ namespace ViscaCameraPlugin
 				joinMap.SetCustomJoinData(customJoins);
 			}
 
-			Debug.Console(1, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
-			Debug.Console(0, "Linking to Bridge Type {0}", GetType().Name);
+			this.LogDebug("Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+			this.LogInformation("Linking to Bridge Type {0}", GetType().Name);
 
 			// link joins to bridge
 			trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
@@ -402,12 +404,12 @@ namespace ViscaCameraPlugin
 			trilist.SetUShortSigAction(joinMap.PresetSelectByNumber.JoinNumber, value =>
 			{
 				PresetSelect(value);
-				Debug.Console(1, this, "LinkToApi PresetSelectByNumber[{0}] => RecallPreset({1})", joinMap.PresetSelectByNumber.JoinNumber, value);
+				this.LogDebug("LinkToApi PresetSelectByNumber[{0}] => RecallPreset({1})", joinMap.PresetSelectByNumber.JoinNumber, value);
 			});
 			trilist.SetUShortSigAction(joinMap.PresetStoreByNumber.JoinNumber, value =>
 			{
 				PresetStore(value, "");
-				Debug.Console(1, this, "LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
+				this.LogDebug("LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
 			});
 
 			// presets
@@ -417,7 +419,7 @@ namespace ViscaCameraPlugin
 			{
 				var presetNumber = preset.Key;
 				var nameJoin = joinMap.PresetNames.JoinNumber + presetNumber - 1;
-				Debug.Console(1, "Linking: join-{0}, Preset-{1} Name-{2}", nameJoin, preset.Key, preset.Value);
+				this.LogDebug("Linking: join-{0}, Preset-{1} Name-{2}", nameJoin, preset.Key, preset.Value);
 				preset.Value.LinkInputSig(trilist.StringInput[nameJoin]);
 				preset.Value.FireUpdate();
 
@@ -461,9 +463,9 @@ namespace ViscaCameraPlugin
 
 		#endregion
 
-		private void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
+		private void Socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
 		{
-			Debug.Console(1, this, args.Client.ClientStatus.ToString());
+			this.LogDebug(args.Client.ClientStatus.ToString());
 
 			OnlineFeedback.FireUpdate();
 			// must null check so LinkToApi doesn't except when the device is TCP or UDP
@@ -529,7 +531,6 @@ namespace ViscaCameraPlugin
 				}
 				else
 					_comms.SendBytes(bytes);
-
 			}
 		}
 
@@ -546,7 +547,7 @@ namespace ViscaCameraPlugin
 		public static bool ContainsSequence(byte[] byteArray, byte[] sequence)
 		{
 			return Enumerable.Range(0, byteArray.Length - sequence.Length + 1)
-							 .Any(i => sequence.SequenceEqual(byteArray.Skip(i).Take(sequence.Length)));
+				.Any(i => sequence.SequenceEqual(byteArray.Skip(i).Take(sequence.Length)));
 		}
 
 		private void Handle_BytesRecieved(object sender, GenericCommMethodReceiveTextArgs args)
@@ -555,30 +556,28 @@ namespace ViscaCameraPlugin
 			{
 				byte[] byteArray = System.Text.Encoding.Unicode.GetBytes(args.Text);
 
-				Debug.Console(2, this, "Handle_BytesRecieved: {0}", args.Text);
-				if (byteArray[2] == 0x50)
+				this.LogVerbose("Handle_BytesRecieved: {argsText}", ComTextHelper.GetEscapedText(byteArray));
+				if (byteArray[1] == 0x50)
 				{
-					Debug.Console(2, this, "power status");
+					this.LogVerbose("Handle_BytesRecieved: power status");
 
-					Debug.Console(2, this, "byteArray.Length == {0}", byteArray.Length);
-
-					if(byteArray.Length < 3)
+					if (byteArray.Length < 2)
 					{
-						Debug.Console(2, this, "byteArray.Length < 3, power status is held in byteArray[3]");
+						this.LogVerbose("byteArray.Length < 4, power status is held in byteArray[4]");
 						return;
 					}
 
-					// power on:	0xy0, 0x50, 0x02, 0xFF
-					if (byteArray[3] == 0x02)
+					// power on: [90][50][02]
+					if (byteArray[2] == 0x02)
 					{
 						CameraIsOff = false;
-						Debug.Console(2, this, "power on");
+						this.LogVerbose("power on");
 					}
-					// power off:	0xy0, 0x50, 0x03, 0xFF
-					else if (byteArray[3] == 0x03)
+					// power off: [90][50][03]
+					else if (byteArray[2] == 0x03)
 					{
 						CameraIsOff = true;
-						Debug.Console(2, this, "power off");
+						this.LogVerbose("power off");
 					}
 					// focus auto:		0xy0, 0x50, 0x02, 0xFF	??? same as power on in document
 					// focus manual:	0xy0, 0x50, 0x03, 0xFF	??? same as power off in document
@@ -587,7 +586,7 @@ namespace ViscaCameraPlugin
 			}
 			catch (Exception err)
 			{
-				Debug.Console(2, this, "Error parsing feedback: {0}", err);
+				this.LogVerbose("Error parsing feedback: ", err);
 			}
 
 			// TODO [ ] complete method

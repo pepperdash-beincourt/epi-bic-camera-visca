@@ -9,8 +9,8 @@
 		<AssemblyTitle>PepperDash.Essentials.Plugins.ViscaCamera</AssemblyTitle>
 		<Company>PepperDash Technologies</Company>
 		<Description>This software is a PepperDash Essentials Plugin for the Nanolumens H-Series.</Description>
-		<Copyright>Copyright 2025</Copyright>
-		<Version>1.0.0-local</Version>
+		<Copyright>Copyright 2026</Copyright>
+		<Version>2.0.0-local</Version>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<OutputPath>4Series\bin\$(Configuration)\</OutputPath>
