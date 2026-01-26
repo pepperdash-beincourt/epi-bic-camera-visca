@@ -4,9 +4,9 @@
 	</PropertyGroup>
 	<PropertyGroup>
 		<TargetFramework>net472</TargetFramework>
-		<RootNamespace>PepperDash.Essentials.Plugins.Visca.Camera</RootNamespace>
+		<RootNamespace>PepperDash.Essentials.Plugins.Camera.Visca</RootNamespace>
 		<Deterministic>false</Deterministic>
-		<AssemblyTitle>PepperDash.Essentials.Plugins.Visca.Camera</AssemblyTitle>
+		<AssemblyTitle>PepperDash.Essentials.Plugins.Camera.Visca</AssemblyTitle>
 		<Company>PepperDash Technology</Company>
 		<Description>This software is a PepperDash Essentials Plugin for controlling cameras using the VISCA protocol.</Description>
 		<Copyright>Copyright 2026</Copyright>
@@ -15,8 +15,8 @@
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<OutputPath>4Series\bin\$(Configuration)\</OutputPath>
 		<Authors>PepperDash Technology</Authors>
-		<PackageId>Pepperdash.Essentials.Plugins.Visca.Camera</PackageId>
-		<PackageProjectUrl>https://github.com/PepperDash/epi-visca-camera.git</PackageProjectUrl>
+		<PackageId>PepperDash.Essentials.Plugins.Camera.Visca</PackageId>
+		<PackageProjectUrl>https://github.com/PepperDash-Engineering/epi-camera-visca.git</PackageProjectUrl>
 		<PackageTags>crestron 4series essentials plugin</PackageTags>
 	</PropertyGroup>
 
@@ -31,11 +31,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="epi-visca-camera.projectinfo" />
+		<None Remove="epi-camera-visca.projectinfo" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="../output\epi-visca-camera.4Series.1.0.0-local.cplz" />
+		<None Remove="../output\**" />
 	</ItemGroup>
 
 	
