@@ -4,18 +4,18 @@
 	</PropertyGroup>
 	<PropertyGroup>
 		<TargetFramework>net472</TargetFramework>
-		<RootNamespace>PepperDash.Essentials.Plugins.ViscaCamera</RootNamespace>
+		<RootNamespace>PepperDash.Essentials.Plugins.Visca.Camera</RootNamespace>
 		<Deterministic>false</Deterministic>
-		<AssemblyTitle>PepperDash.Essentials.Plugins.ViscaCamera</AssemblyTitle>
-		<Company>PepperDash Technologies</Company>
-		<Description>This software is a PepperDash Essentials Plugin for the Nanolumens H-Series.</Description>
+		<AssemblyTitle>PepperDash.Essentials.Plugins.Visca.Camera</AssemblyTitle>
+		<Company>PepperDash Technology</Company>
+		<Description>This software is a PepperDash Essentials Plugin for controlling cameras using the VISCA protocol.</Description>
 		<Copyright>Copyright 2026</Copyright>
 		<Version>2.0.0-local</Version>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<OutputPath>4Series\bin\$(Configuration)\</OutputPath>
-		<Authors>PepperDash Technologies</Authors>
-		<PackageId>Pepperdash.Essentials.Plugins.ViscaCamera</PackageId>
+		<Authors>PepperDash Technology</Authors>
+		<PackageId>Pepperdash.Essentials.Plugins.Visca.Camera</PackageId>
 		<PackageProjectUrl>https://github.com/PepperDash/epi-visca-camera.git</PackageProjectUrl>
 		<PackageTags>crestron 4series essentials plugin</PackageTags>
 	</PropertyGroup>
