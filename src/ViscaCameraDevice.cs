@@ -554,7 +554,7 @@ namespace ViscaCameraPlugin
 		{
 			try
 			{
-				byte[] byteArray = System.Text.Encoding.Unicode.GetBytes(args.Text);
+				byte[] byteArray = System.Text.Encoding.GetEncoding(28591).GetBytes(args.Text);
 
 				this.LogVerbose("Handle_BytesRecieved: {argsText}", ComTextHelper.GetEscapedText(byteArray));
 				if (byteArray[1] == 0x50)
