@@ -562,13 +562,13 @@ namespace ViscaCameraPlugin
 					// power on:	0xy0, 0x50, 0x02, 0xFF
 					if (byteArray[3] == 0x02)
 					{
-						CameraIsOff = true;
+						CameraIsOff = false;
 						Debug.Console(2, this, "power on");
 					}
 					// power off:	0xy0, 0x50, 0x03, 0xFF
 					else if (byteArray[3] == 0x03)
 					{
-						CameraIsOff = false;
+						CameraIsOff = true;
 						Debug.Console(2, this, "power off");
 					}
 					// focus auto:		0xy0, 0x50, 0x02, 0xFF	??? same as power on in document
