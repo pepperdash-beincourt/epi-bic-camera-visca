@@ -398,19 +398,19 @@ namespace ViscaCameraPlugin
 				JoinType = eJoinType.Serial
 			});
 
-		//[JoinName("IPAddress")]
-		//public JoinDataComplete IpAddress = new JoinDataComplete(
-		//    new JoinData
-		//    {
-		//        JoinNumber = 2,
-		//        JoinSpan = 1
-		//    },
-		//    new JoinMetadata
-		//    {
-		//        Description = "Camera IP address",
-		//        JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
-		//        JoinType = eJoinType.Serial
-		//    });
+		[JoinName("DeviceIpAddress")]
+		public JoinDataComplete DeviceIpAddress = new JoinDataComplete(
+		   new JoinData
+		   {
+		       JoinNumber = 2,
+		       JoinSpan = 1
+		   },
+		   new JoinMetadata
+		   {
+		       Description = "Camera IP address",
+		       JoinCapabilities = eJoinCapabilities.ToSIMPL,
+		       JoinType = eJoinType.Serial
+		   });
 
 		[JoinName("PresetName")]
 		public JoinDataComplete PresetNames = new JoinDataComplete(

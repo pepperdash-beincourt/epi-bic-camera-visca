@@ -8,12 +8,13 @@ using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Devices.Common.Cameras;
 
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice, ICommunicationMonitor, IRoutingSource,
-		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities
+		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities, IDeviceInfoProvider
 	{
 
 		public bool CanPan { get; private set; }
@@ -146,7 +147,7 @@ namespace ViscaCameraPlugin
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
 
-		public IntFeedback NumberOfPresetsFeedback { get; private set; }
+        public IntFeedback NumberOfPresetsFeedback { get; private set; }
 		public BoolFeedback PresetStoredFeedback { get; private set; }
 		public Dictionary<uint, ViscaCameraPresetsConfig> Presets { get; set; }
 		public Dictionary<uint, StringFeedback> PresetNamesFeedbacks { get; private set; }
@@ -161,17 +162,18 @@ namespace ViscaCameraPlugin
 		public IntFeedback ZoomSpeedFeedback { get; private set; }
 		public IntFeedback FocusSpeedFeedback { get; private set; }
 
+		public DeviceInfo DeviceInfo { get; private set; }
+		public StringFeedback DeviceInfoIpAddressFeedback { get; private set; }
+		public event DeviceInfoChangeHandler DeviceInfoChanged;
 
-
-
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="key">device key</param>
-		/// <param name="name">device name</param>
-		/// <param name="config">device config</param>
-		/// <param name="comms">IBasicCommunications</param>
-		public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key">device key</param>
+        /// <param name="name">device name</param>
+        /// <param name="config">device config</param>
+        /// <param name="comms">IBasicCommunications</param>
+        public ViscaCameraDevice(string key, string name, IBasicCommunication comms, ViscaCameraConfig config)
 			: base(key, name)
 		{
 			this.LogInformation("Constructing new VISCA Camera instance");
@@ -185,6 +187,8 @@ namespace ViscaCameraPlugin
 			TiltSpeedFeedback = new IntFeedback("tiltSpeed", () => (int)TiltSpeed);
 			ZoomSpeedFeedback = new IntFeedback("zoomSpeed", () => (int)ZoomSpeed);
 			FocusSpeedFeedback = new IntFeedback("focusSpeed", () => (int)FocusSpeed);
+			DeviceInfoIpAddressFeedback = new StringFeedback("DeviceInfoIpAddress", () => DeviceInfo?.IpAddress ?? "Unknown");
+
 
 			_pollTimeMs = config.PollTimeMs > 0 ? config.PollTimeMs : _pollTimeMs;
 			_address = (config.Address > 0 && config.Address <= AddressMax)
@@ -321,6 +325,8 @@ namespace ViscaCameraPlugin
 			MonitorStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
 			if (SocketStatusFeedback != null)
 				SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
+
+			DeviceInfoIpAddressFeedback.LinkInputSig(trilist.StringInput[joinMap.DeviceIpAddress.JoinNumber]);
 
 			// power
 			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, CameraOn);
@@ -753,6 +759,42 @@ namespace ViscaCameraPlugin
 			if (_privacyOffPreset == 0) return;
 			PresetSelect((int)_privacyOffPreset);
 		}
-	}
+
+		#region DeviceInfoProvider
+
+		public void UpdateDeviceInfo()
+		{
+			var ipAddress = string.Empty;
+
+			if (_comms is GenericTcpIpClient socket)
+			{
+				ipAddress = socket.Hostname;
+			}
+			else if (_comms is GenericUdpServer server)
+			{
+				ipAddress = server.Hostname;
+			}
+			else
+			{
+				ipAddress = "RS-232";
+			}
+
+			DeviceInfo = new DeviceInfo
+			{
+				FirmwareVersion = "",
+				HostName = "",
+				IpAddress = ipAddress,
+				MacAddress = "",
+				SerialNumber = "",
+			};
+
+			var handler = DeviceInfoChanged;
+			handler?.Invoke(this, new DeviceInfoEventArgs { DeviceInfo = DeviceInfo });
+
+			DeviceInfoIpAddressFeedback.FireUpdate();
+		}
+		
+		#endregion
+    }
 }
 
