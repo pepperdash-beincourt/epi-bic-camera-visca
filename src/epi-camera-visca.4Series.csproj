@@ -43,7 +43,7 @@
 	
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.24.0">
+		<PackageReference Include="PepperDashEssentials" Version="2.27.0">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
