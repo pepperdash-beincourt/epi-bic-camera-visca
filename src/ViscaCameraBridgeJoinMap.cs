@@ -201,7 +201,7 @@ namespace ViscaCameraPlugin
 			new JoinMetadata
 			{
 				Description = "Camera preset stored Feedback",
-				JoinCapabilities = eJoinCapabilities.FromSIMPL,
+				JoinCapabilities = eJoinCapabilities.ToSIMPL,
 				JoinType = eJoinType.Digital
 			});
 
