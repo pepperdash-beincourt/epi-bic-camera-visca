@@ -412,6 +412,11 @@ namespace ViscaCameraPlugin
 				PresetStore(value, "");
 				this.LogDebug("LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
 			});
+			trilist.SetUShortSigAction(joinMap.PresetRawSelect.JoinNumber, value =>
+			{
+				PresetRecallRaw(value);
+				this.LogDebug("LinkToApi PresetRawSelect[{0}] => PresetRecallRaw({1})", joinMap.PresetRawSelect.JoinNumber, value);
+			});
 
 			// presets
 			NumberOfPresetsFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
