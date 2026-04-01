@@ -1,17 +1,13 @@
-name: Build Essentials Plugin
-
 on:
   push:
     branches:
       - '**'
 
 jobs:
-  # Get-Version caller
   getVersion:
     uses: PepperDash/workflow-templates/.github/workflows/essentialsplugins-getversion.yml@main
-    secrets: inherit    
-  
-  # 4-Series caller
+    secrets: inherit
+
   build-4Series:
     uses: PepperDash/workflow-templates/.github/workflows/essentialsplugins-4Series-builds.yml@main
     secrets: inherit
