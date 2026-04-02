@@ -412,6 +412,11 @@ namespace ViscaCameraPlugin
 				PresetStore(value, "");
 				this.LogDebug("LinkToApi PresetStoreByNumber[{0}] => SavePreset({1})", joinMap.PresetStoreByNumber.JoinNumber, value);
 			});
+			trilist.SetUShortSigAction(joinMap.PresetRawSelect.JoinNumber, value =>
+			{
+				PresetRecallRaw(value);
+				this.LogDebug("LinkToApi PresetRawSelect[{0}] => PresetRecallRaw({1})", joinMap.PresetRawSelect.JoinNumber, value);
+			});
 
 			// presets
 			NumberOfPresetsFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
@@ -721,6 +726,18 @@ namespace ViscaCameraPlugin
 
 		public void PresetRecallRaw(int preset)
 		{
+			// Guard against values > 255 to avoid OverflowException in Convert.ToByte
+			if (preset > byte.MaxValue)
+			{
+				this.LogWarning("PresetRecallRaw received out-of-range value {0}", preset);
+				return;
+			}
+			else if (preset < 0)
+			{
+				this.LogWarning("PresetRecallRaw received negative value {0}", preset);
+				return;
+			}
+
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(preset), 0xFF });
 		}
 
