@@ -31,6 +31,12 @@ public static class AssemblyFixture
     public static MetadataLoadContext Context => LazyContext.Value;
     public static Assembly PluginAssembly => LazyAssembly.Value;
 
+    private static string ProjectAssetsJsonPath =>
+        Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..",
+            "src", "obj", "project.assets.json"));
+
     private static MetadataLoadContext CreateContext()
     {
         var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
@@ -44,25 +50,31 @@ public static class AssemblyFixture
         foreach (var dll in Directory.GetFiles(runtimeDir, "*.dll"))
             dllByName.TryAdd(Path.GetFileName(dll), dll);
 
-        // Priority 3: Resolve exact dependency versions from the plugin's deps.json
-        var depsJsonPath = Path.ChangeExtension(PluginDllPath, ".deps.json");
-        if (File.Exists(depsJsonPath))
-        {
-            foreach (var path in ResolveDepsJsonAssemblies(depsJsonPath))
-                dllByName.TryAdd(Path.GetFileName(path), path);
-        }
+        // Priority 3: Resolve all dependencies from project.assets.json.
+        // This includes compile-time-only references (e.g. PepperDash with ExcludeAssets=runtime)
+        // that do not appear in the plugin's deps.json.
+        foreach (var path in ResolveProjectAssetsAssemblies())
+            dllByName.TryAdd(Path.GetFileName(path), path);
 
         return new MetadataLoadContext(new PathAssemblyResolver(dllByName.Values));
     }
 
-    private static IEnumerable<string> ResolveDepsJsonAssemblies(string depsJsonPath)
-    {
-        var nugetDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".nuget", "packages");
+    // TFM priority order for selecting the best lib/ subfolder from a NuGet package.
+    private static readonly string[] TfmOrder =
+        ["net8.0", "net7.0", "net6.0", "net5.0", "netstandard2.1", "netstandard2.0", "netstandard1.3"];
 
-        using var stream = File.OpenRead(depsJsonPath);
+    private static IEnumerable<string> ResolveProjectAssetsAssemblies()
+    {
+        if (!File.Exists(ProjectAssetsJsonPath))
+            yield break;
+
+        using var stream = File.OpenRead(ProjectAssetsJsonPath);
         using var doc = JsonDocument.Parse(stream);
+
+        // packageFolders lists the NuGet global packages directories (e.g. ~/.nuget/packages/)
+        var nugetDirs = doc.RootElement.TryGetProperty("packageFolders", out var folders)
+            ? folders.EnumerateObject().Select(f => f.Name).ToList()
+            : [Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages")];
 
         if (!doc.RootElement.TryGetProperty("libraries", out var libraries))
             yield break;
@@ -73,19 +85,46 @@ public static class AssemblyFixture
                 continue;
             if (!lib.Value.TryGetProperty("path", out var pathProp))
                 continue;
-
-            var packagePath = Path.Combine(nugetDir, pathProp.GetString()!);
-            if (!Directory.Exists(packagePath))
+            if (!lib.Value.TryGetProperty("files", out var filesProp))
                 continue;
 
-            var libDir = Path.Combine(packagePath, "lib", "net8.0");
-            if (!Directory.Exists(libDir))
-                libDir = Path.Combine(packagePath, "lib", "netstandard2.0");
-            if (!Directory.Exists(libDir))
-                continue;
+            var packageRelPath = pathProp.GetString()!;
 
-            foreach (var dll in Directory.GetFiles(libDir, "*.dll"))
-                yield return dll;
+            // Collect the DLL paths available in this package, keyed by lib/{tfm}/ prefix
+            var packageDlls = filesProp.EnumerateArray()
+                .Select(f => f.GetString()!)
+                .Where(f => f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // Pick the best TFM available in this package
+            string? chosenTfm = null;
+            foreach (var tfm in TfmOrder)
+            {
+                if (packageDlls.Any(f => f.StartsWith($"lib/{tfm}/", StringComparison.OrdinalIgnoreCase)))
+                {
+                    chosenTfm = tfm;
+                    break;
+                }
+            }
+            if (chosenTfm == null) continue;
+
+            var tfmPrefix = $"lib/{chosenTfm}/";
+            var tfmDlls = packageDlls.Where(f => f.StartsWith(tfmPrefix, StringComparison.OrdinalIgnoreCase));
+
+            // Find the first NuGet package folder that actually contains this package
+            foreach (var nugetDir in nugetDirs)
+            {
+                var packagePath = Path.Combine(nugetDir, packageRelPath);
+                if (!Directory.Exists(packagePath)) continue;
+
+                foreach (var dllFile in tfmDlls)
+                {
+                    var fullPath = Path.Combine(packagePath, dllFile.Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(fullPath))
+                        yield return fullPath;
+                }
+                break;
+            }
         }
     }
 
