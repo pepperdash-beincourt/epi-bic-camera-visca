@@ -770,6 +770,25 @@ namespace ViscaCameraPlugin
 			if (_privacyOffPreset == 0) return;
 			PresetSelect((int)_privacyOffPreset);
 		}
+
+
+		public void LightbarOff()
+		{
+			// 8x c1 00 00 00 00 ff
+			SendBytes(new byte[] { _address, 0xc1, 0x00, 0x00, 0x00, 0x00, 0xFF });
+		}
+
+		public void LightbarHalfGreen()
+		{
+			// 8x c1 00 0C 0C 00 ff
+			SendBytes(new byte[] { _address, 0xc1, 0x00, 0x0C, 0x0C, 0x00, 0xFF });
+		}
+
+		public void LightbarHalfRed()
+		{
+			// 8x c1 01 0D 0D 01 ff
+			SendBytes(new byte[] { _address, 0xc1, 0x01, 0x0D, 0x0D, 0x01, 0xFF });
+		}
 	}
 }
 
