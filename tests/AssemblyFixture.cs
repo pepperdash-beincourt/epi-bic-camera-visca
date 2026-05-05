@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 
 namespace PepperDash.Essentials.Plugins.Camera.Visca.Tests;
 
@@ -7,11 +8,22 @@ public static class AssemblyFixture
     private static readonly Lazy<MetadataLoadContext> LazyContext = new(CreateContext);
     private static readonly Lazy<Assembly> LazyAssembly = new(LoadPluginAssembly);
 
+    private static string Configuration
+    {
+        get
+        {
+            // Derive build configuration from test output path: tests/bin/{Configuration}/net8.0/
+            var baseDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            var parts = baseDir.Split(Path.DirectorySeparatorChar);
+            return parts[^2]; // net8.0 is last, Configuration is second-to-last
+        }
+    }
+
     private static string PluginDllPath =>
         Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..",
-            "src", "4Series", "bin", "Debug", "net8.0",
+            "src", "4Series", "bin", Configuration, "net8.0",
             "epi-camera-visca.4Series.dll"));
 
     private static string PluginOutputDir => Path.GetDirectoryName(PluginDllPath)!;
@@ -22,7 +34,6 @@ public static class AssemblyFixture
     private static MetadataLoadContext CreateContext()
     {
         var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-        // Use a dictionary keyed by filename to avoid loading the same assembly name from multiple paths
         var dllByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         // Priority 1: Plugin output directory (has the correct versions)
@@ -33,24 +44,56 @@ public static class AssemblyFixture
         foreach (var dll in Directory.GetFiles(runtimeDir, "*.dll"))
             dllByName.TryAdd(Path.GetFileName(dll), dll);
 
-        // Priority 3: NuGet global packages cache (fallback for transitive deps)
-        var nugetDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".nuget", "packages");
-        if (Directory.Exists(nugetDir))
+        // Priority 3: Resolve exact dependency versions from the plugin's deps.json
+        var depsJsonPath = Path.ChangeExtension(PluginDllPath, ".deps.json");
+        if (File.Exists(depsJsonPath))
         {
-            foreach (var dll in Directory.GetFiles(nugetDir, "*.dll", SearchOption.AllDirectories))
-                dllByName.TryAdd(Path.GetFileName(dll), dll);
+            foreach (var path in ResolveDepsJsonAssemblies(depsJsonPath))
+                dllByName.TryAdd(Path.GetFileName(path), path);
         }
 
         return new MetadataLoadContext(new PathAssemblyResolver(dllByName.Values));
+    }
+
+    private static IEnumerable<string> ResolveDepsJsonAssemblies(string depsJsonPath)
+    {
+        var nugetDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".nuget", "packages");
+
+        using var stream = File.OpenRead(depsJsonPath);
+        using var doc = JsonDocument.Parse(stream);
+
+        if (!doc.RootElement.TryGetProperty("libraries", out var libraries))
+            yield break;
+
+        foreach (var lib in libraries.EnumerateObject())
+        {
+            if (!lib.Value.TryGetProperty("type", out var typeProp) || typeProp.GetString() != "package")
+                continue;
+            if (!lib.Value.TryGetProperty("path", out var pathProp))
+                continue;
+
+            var packagePath = Path.Combine(nugetDir, pathProp.GetString()!);
+            if (!Directory.Exists(packagePath))
+                continue;
+
+            var libDir = Path.Combine(packagePath, "lib", "net8.0");
+            if (!Directory.Exists(libDir))
+                libDir = Path.Combine(packagePath, "lib", "netstandard2.0");
+            if (!Directory.Exists(libDir))
+                continue;
+
+            foreach (var dll in Directory.GetFiles(libDir, "*.dll"))
+                yield return dll;
+        }
     }
 
     private static Assembly LoadPluginAssembly()
     {
         if (!File.Exists(PluginDllPath))
             throw new FileNotFoundException(
-                $"Plugin DLL not found at '{PluginDllPath}'. Build the plugin first with: dotnet build src/epi-camera-visca.4Series.csproj -c Debug");
+                $"Plugin DLL not found at '{PluginDllPath}'. Build the plugin first with: dotnet build src/epi-camera-visca.4Series.csproj");
         return Context.LoadFromAssemblyPath(PluginDllPath);
     }
 
