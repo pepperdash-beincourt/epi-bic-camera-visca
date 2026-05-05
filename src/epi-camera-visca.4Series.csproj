@@ -3,7 +3,7 @@
 		<ProjectType>ProgramLibrary</ProjectType>
 	</PropertyGroup>
 	<PropertyGroup>
-		<TargetFramework>net472</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<RootNamespace>PepperDash.Essentials.Plugins.Camera.Visca</RootNamespace>
 		<Deterministic>false</Deterministic>
 		<AssemblyTitle>PepperDash.Essentials.Plugins.Camera.Visca</AssemblyTitle>
@@ -17,12 +17,10 @@
 		<Authors>PepperDash Technology</Authors>
 		<PackageId>PepperDash.Essentials.Plugins.Camera.Visca</PackageId>
 		<PackageProjectUrl>https://github.com/PepperDash-Engineering/epi-camera-visca.git</PackageProjectUrl>
-		<PackageTags>crestron 4series essentials plugin</PackageTags>
+		<PackageTags>crestron 4series essentials plugin net8</PackageTags>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<DefineConstants>$(DefineConstants);SERIES4</DefineConstants>
-	</PropertyGroup>
+	
 
 	<ItemGroup>
 		<Compile Remove="Properties\**" />
@@ -43,7 +41,8 @@
 	
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.24.0">
+		<PackageReference Include="Crestron.SimplSharp.SDK.ProgramLibrary" Version="2.21.128" />
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-testing.14">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>

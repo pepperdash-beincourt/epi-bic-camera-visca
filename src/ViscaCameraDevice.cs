@@ -245,7 +245,7 @@ namespace ViscaCameraPlugin
 		/// Use the Initialize to connect the device and start the comms monitor
 		/// </summary>
 		/// <returns></returns>
-		public override void Initialize()
+		protected override void Initialize()
 		{
 			// Essentials will handle the connect method to the device
 			_comms.Connect();
