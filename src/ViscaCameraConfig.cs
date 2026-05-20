@@ -30,6 +30,9 @@ namespace ViscaCameraPlugin
 		[JsonProperty("PrivacyOffPreset")]
 		public uint PrivacyOffPreset { get; set; }
 
+		[JsonProperty("RecallLastPresetOnPrivacyOff")]
+		public bool RecallLastPresetOnPrivacyOff { get; set; }
+
 		[JsonProperty("pollTimeMs")]
 		public int PollTimeMs { get; set; }
 

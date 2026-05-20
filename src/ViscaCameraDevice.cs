@@ -145,6 +145,8 @@ namespace ViscaCameraPlugin
 
 		private readonly uint _privacyOnPreset;
 		private readonly uint _privacyOffPreset;
+		private readonly bool _recallLastPresetOnPrivacyOff;
+		private int _lastSelectedPreset;
 
 		public IntFeedback NumberOfPresetsFeedback { get; private set; }
 		public BoolFeedback PresetStoredFeedback { get; private set; }
@@ -203,6 +205,7 @@ namespace ViscaCameraPlugin
 
 			_privacyOnPreset = config.PrivacyOnPreset;
 			_privacyOffPreset = config.PrivacyOffPreset;
+			_recallLastPresetOnPrivacyOff = config.RecallLastPresetOnPrivacyOff;
 
 			if (config.Control.Method.ToString().ToLower() == "udp")
 			{
@@ -421,13 +424,18 @@ namespace ViscaCameraPlugin
 			// presets
 			NumberOfPresetsFeedback.LinkInputSig(trilist.UShortInput[joinMap.NumberOfPresets.JoinNumber]);
 			PresetStoredFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PresetStoredFeedback.JoinNumber]);
-			foreach (var preset in PresetNamesFeedbacks)
+			for (uint i = 1; i <= joinMap.PresetSelect.JoinSpan; i++)
 			{
-				var presetNumber = preset.Key;
-				var nameJoin = joinMap.PresetNames.JoinNumber + presetNumber - 1;
-				this.LogDebug("Linking: join-{0}, Preset-{1} Name-{2}", nameJoin, preset.Key, preset.Value);
-				preset.Value.LinkInputSig(trilist.StringInput[nameJoin]);
-				preset.Value.FireUpdate();
+				var presetNumber = i;
+
+				StringFeedback nameFeedback;
+				if (PresetNamesFeedbacks.TryGetValue(presetNumber, out nameFeedback))
+				{
+					var nameJoin = joinMap.PresetNames.JoinNumber + presetNumber - 1;
+					this.LogDebug("Linking: join-{0}, Preset-{1} Name-{2}", nameJoin, presetNumber, nameFeedback);
+					nameFeedback.LinkInputSig(trilist.StringInput[nameJoin]);
+					nameFeedback.FireUpdate();
+				}
 
 				var selectJoin = joinMap.PresetSelect.JoinNumber + presetNumber - 1;
 				var storeJoin = joinMap.PresetStore.JoinNumber + presetNumber - 1;
@@ -722,6 +730,15 @@ namespace ViscaCameraPlugin
 			{
 				SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(p.Id), 0xFF });
 			}
+			else
+			{
+				PresetRecallRaw(preset);
+			}
+
+			if (preset != _privacyOnPreset && preset != _privacyOffPreset)
+			{
+				_lastSelectedPreset = preset;
+			}
 		}
 
 		public void PresetRecallRaw(int preset)
@@ -752,11 +769,20 @@ namespace ViscaCameraPlugin
 			if (Presets.TryGetValue((uint)preset, out p))
 			{
 				SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(p.Id), 0xFF });
-
-				PresetStored = true;
-				CrestronEnvironment.Sleep(500);
-				PresetStored = false;
 			}
+			else
+			{
+				if (preset < 0 || preset > byte.MaxValue)
+				{
+					this.LogWarning("PresetStore received out-of-range value {0}", preset);
+					return;
+				}
+				SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x01, Convert.ToByte(preset), 0xFF });
+			}
+
+			PresetStored = true;
+			CrestronEnvironment.Sleep(500);
+			PresetStored = false;
 		}
 
 		public void PrivacyOn()
@@ -767,6 +793,11 @@ namespace ViscaCameraPlugin
 
 		public void PrivacyOff()
 		{
+			if (_recallLastPresetOnPrivacyOff && _lastSelectedPreset > 0)
+			{
+				PresetSelect(_lastSelectedPreset);
+				return;
+			}
 			if (_privacyOffPreset == 0) return;
 			PresetSelect((int)_privacyOffPreset);
 		}
