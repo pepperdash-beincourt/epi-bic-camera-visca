@@ -137,6 +137,8 @@ Udp
 - IHasCameraOff
 - IHasCameraPtzControl
 - IHasCameraFocusControl
+- IHasPowerControlWithFeedback
+- IHasCameraPresets
 <!-- END Interfaces Implemented -->
 <!-- START Base Classes -->
 ### Base Classes
