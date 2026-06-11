@@ -278,11 +278,16 @@ namespace ViscaCameraPlugin
 		{
 			if (presets == null)
 			{
-				this.LogInformation("InitializePresets failed, preset dictionary is null");
+				this.LogInformation("InitializePresets failed, preset list is null");
 				return;
 			}
 
-			this.LogInformation("Intializing {0} presets", presets.Count());
+			this.LogInformation("Initializing {0} presets", presets.Count());
+
+			// clear so the method is safe to call more than once (e.g. re-initialization)
+			_presetsByIndex.Clear();
+			Presets.Clear();
+			PresetNamesFeedbacks.Clear();
 
 			uint index = 1;
 			foreach (var preset in presets)
