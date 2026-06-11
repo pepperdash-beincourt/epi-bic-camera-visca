@@ -326,6 +326,10 @@ namespace ViscaCameraPlugin
 			trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, CameraOn);
 			trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, CameraOff);
 
+            trilist.SetSigTrueAction(joinMap.TrackingOn.JoinNumber, TrackingOn);
+            trilist.SetSigTrueAction(joinMap.TrackingOff.JoinNumber, TrackingOff);
+
+
 			CameraIsOffFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
 			CameraIsOffFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
 
@@ -690,16 +694,6 @@ namespace ViscaCameraPlugin
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x08, 0x02, 0xFF });
 		}
 
-        public void TrackingOn()
-        {
-            SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, 0x50, 0xFF });
-        }
-
-        public void TrackingOff()
-        {
-            SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, 0x51, 0xFF });
-        }
-
         public void TriggerAutoFocus()
 		{
 			var cmd = AutoFocus // ? off : on
@@ -712,6 +706,16 @@ namespace ViscaCameraPlugin
 		{
 			var cmd = new byte[] { _address, 0x01, 0x06, 0x04, 0xFF };
 			SendBytes(cmd);
+		}
+
+		public void TrackingOn()
+		{
+			PresetSelect(autoTrackingStartPreset);
+		}
+
+		public void TrackingOff()
+		{
+			PresetSelect(autoTrackingStopPreset);
 		}
 
 		public void PresetSelect(int preset)
