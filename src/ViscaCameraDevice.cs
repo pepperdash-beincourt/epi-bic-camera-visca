@@ -44,7 +44,10 @@ namespace ViscaCameraPlugin
 		private const uint FocusSpeedMax = 7;
 		private const int PresetStoreHoldTimeMs = 5000; // 5s
 
-		private bool _cameraIsOff;
+		private const int autoTrackingStartPreset = 80;
+		private const int autoTrackingStopPreset = 81;
+
+        private bool _cameraIsOff;
 		public bool CameraIsOff
 		{
 			get { return _cameraIsOff; }
@@ -382,6 +385,9 @@ namespace ViscaCameraPlugin
 				else FocusStop();
 			});
 
+			trilist.SetSigTrueAction(joinMap.TrackingOn.JoinNumber, () => TrackingOn());
+			trilist.SetSigTrueAction(joinMap.TrackingOff.JoinNumber, () => TrackingOff());
+
 			trilist.SetSigTrueAction(joinMap.TriggerAutoFocus.JoinNumber, TriggerAutoFocus);
 
 			trilist.SetUShortSigAction(joinMap.PanSpeed.JoinNumber, panSpeed => PanSpeed = panSpeed);
@@ -684,7 +690,17 @@ namespace ViscaCameraPlugin
 			SendBytes(new byte[] { _address, 0x01, 0x04, 0x08, 0x02, 0xFF });
 		}
 
-		public void TriggerAutoFocus()
+        public void TrackingOn()
+        {
+            SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, 0x50, 0xFF });
+        }
+
+        public void TrackingOff()
+        {
+            SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, 0x51, 0xFF });
+        }
+
+        public void TriggerAutoFocus()
 		{
 			var cmd = AutoFocus // ? off : on
 				? new byte[] { _address, 0x01, 0x04, 0x38, 0x03, 0xFF }
@@ -701,11 +717,23 @@ namespace ViscaCameraPlugin
 		public void PresetSelect(int preset)
 		{
 			ViscaCameraPresetsConfig p;
-			if (Presets.TryGetValue((uint)preset, out p))
+			byte presetID;
+
+            if (Presets.TryGetValue((uint)preset, out p))
 			{
-				SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, Convert.ToByte(p.Id), 0xFF });
+				presetID = Convert.ToByte(p.Id);
 			}
-		}
+			else if (preset == autoTrackingStartPreset || preset == autoTrackingStopPreset)
+            {
+				presetID = Convert.ToByte(preset);   
+            }
+			else
+			{
+				return;
+			}
+
+			SendBytes(new byte[] { _address, 0x01, 0x04, 0x3F, 0x02, presetID, 0xFF });
+        }
 
 		public void PresetStore(int preset, string description)
 		{
