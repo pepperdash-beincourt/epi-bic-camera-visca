@@ -216,7 +216,7 @@ namespace ViscaCameraPlugin
 			new JoinMetadata
 			{
 				Description = "Preset store",
-				JoinCapabilities = eJoinCapabilities.ToSIMPL,
+				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Digital
 			});
 
@@ -391,6 +391,20 @@ namespace ViscaCameraPlugin
 			new JoinMetadata
 			{
 				Description = "Preset store by number",
+				JoinCapabilities = eJoinCapabilities.FromSIMPL,
+				JoinType = eJoinType.Analog
+			});
+
+		[JoinName("PresetRawSelect")]
+		public JoinDataComplete PresetRawSelect = new JoinDataComplete(
+			new JoinData
+			{
+				JoinNumber = 13,
+				JoinSpan = 1
+			},
+			new JoinMetadata
+			{
+				Description = "Preset recall by raw VISCA preset number",
 				JoinCapabilities = eJoinCapabilities.FromSIMPL,
 				JoinType = eJoinType.Analog
 			});
