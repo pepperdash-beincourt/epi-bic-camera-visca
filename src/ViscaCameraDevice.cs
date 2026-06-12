@@ -47,8 +47,8 @@ namespace ViscaCameraPlugin
 		private const uint FocusSpeedMax = 7;
 		private const int PresetStoreHoldTimeMs = 5000; // 5s
 
-		private const int autoTrackingStartPreset = 80;
-		private const int autoTrackingStopPreset = 81;
+		private const int AutoTrackingStartPreset = 80;
+		private const int AutoTrackingStopPreset = 81;
 
         private bool _cameraIsOff;
 		public bool CameraIsOff
@@ -713,12 +713,12 @@ namespace ViscaCameraPlugin
 
 		public void TrackingOn()
 		{
-			PresetSelect(autoTrackingStartPreset);
+			PresetSelect(AutoTrackingStartPreset);
 		}
 
 		public void TrackingOff()
 		{
-			PresetSelect(autoTrackingStopPreset);
+			PresetSelect(AutoTrackingStopPreset);
 		}
 
 		public void PresetSelect(int preset)
@@ -726,7 +726,7 @@ namespace ViscaCameraPlugin
 			ViscaCameraPresetsConfig p;
 			byte presetID;
 
-            if (preset == autoTrackingStartPreset || preset == autoTrackingStopPreset)
+            if (preset == AutoTrackingStartPreset || preset == AutoTrackingStopPreset)
             {
 				presetID = Convert.ToByte(preset);
             }
