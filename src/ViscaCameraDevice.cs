@@ -726,14 +726,14 @@ namespace ViscaCameraPlugin
 			ViscaCameraPresetsConfig p;
 			byte presetID;
 
-            if (Presets.TryGetValue((uint)preset, out p))
+            if (preset == autoTrackingStartPreset || preset == autoTrackingStopPreset)
+            {
+				presetID = Convert.ToByte(preset);
+            }
+			else if (Presets.TryGetValue((uint)preset, out p))
 			{
 				presetID = Convert.ToByte(p.Id);
 			}
-			else if (preset == autoTrackingStartPreset || preset == autoTrackingStopPreset)
-            {
-				presetID = Convert.ToByte(preset);   
-            }
 			else
 			{
 				return;
