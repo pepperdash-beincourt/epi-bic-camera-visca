@@ -392,8 +392,6 @@ namespace ViscaCameraPlugin
 				else FocusStop();
 			});
 
-			trilist.SetSigTrueAction(joinMap.TrackingOn.JoinNumber, () => TrackingOn());
-			trilist.SetSigTrueAction(joinMap.TrackingOff.JoinNumber, () => TrackingOff());
 
 			trilist.SetSigTrueAction(joinMap.TriggerAutoFocus.JoinNumber, TriggerAutoFocus);
 
