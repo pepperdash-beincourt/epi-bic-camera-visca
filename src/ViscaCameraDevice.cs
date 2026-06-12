@@ -11,7 +11,10 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice, ICommunicationMonitor, IRoutingSource,
-		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities
+		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl
+#if SERIES4
+		, ICameraCapabilities
+#endif
 	{
 
         public bool CanPan { get; private set; }
