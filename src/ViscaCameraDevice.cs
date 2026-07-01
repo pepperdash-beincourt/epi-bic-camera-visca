@@ -27,6 +27,8 @@ namespace ViscaCameraPlugin
 
 		public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
 
+		private RoutingOutputPort AnyOut;
+
 		public StatusMonitorBase CommunicationMonitor { get; private set; }
 		private readonly IBasicCommunication _comms;
 		private readonly bool _commsIsSerial;
@@ -193,7 +195,12 @@ namespace ViscaCameraPlugin
 		{
 			this.LogInformation("Constructing new VISCA Camera instance");
 
+			AnyOut = new RoutingOutputPort(RoutingPortNames.AnyOut, eRoutingSignalType.Video,
+			eRoutingPortConnectionType.None, null, this);
+
 			OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
+
+			OutputPorts.Add(AnyOut);
 
 			MonitorStatusFeedback = new IntFeedback("monitorStatus", () => (int)CommunicationMonitor.Status);
 			CameraIsOffFeedback = new BoolFeedback("cameraIsOff", () => CameraIsOff);
