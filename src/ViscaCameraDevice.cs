@@ -272,12 +272,20 @@ namespace ViscaCameraPlugin
 		/// <returns></returns>
 		protected override void Initialize()
 		{
-			// Essentials will handle the connect method to the device
-			_comms.Connect();
-			// Essentials will handle starting the comms monitor
-			CommunicationMonitor.Start();
+			try
+			{
+				// Essentials will handle the connect method to the device
+				_comms.Connect();
+				// Essentials will handle starting the comms monitor
+				CommunicationMonitor.Start();
 
-			base.Initialize();
+				base.Initialize();
+			}
+			catch (Exception ex)
+			{
+				this.LogError(ex, "Exception in Initialize: {0}", ex.Message);
+				throw;
+			}
 		}
 
 

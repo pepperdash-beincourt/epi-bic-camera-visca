@@ -10,7 +10,7 @@
 		<Company>PepperDash Technology</Company>
 		<Description>This software is a PepperDash Essentials Plugin for controlling cameras using the VISCA protocol.</Description>
 		<Copyright>Copyright 2026</Copyright>
-		<Version>2.0.0-local</Version>
+		<Version>3.0.0-local</Version>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<OutputPath>4Series\bin\$(Configuration)\</OutputPath>
@@ -38,7 +38,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Crestron.SimplSharp.SDK.ProgramLibrary" Version="2.21.128" />
-		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-routing.32">
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-routing.47">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
