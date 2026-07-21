@@ -221,10 +221,20 @@ namespace ViscaCameraPlugin
 			ZoomSpeed = config.ZoomSpeed == 0 ? ZoomSpeedDefault : config.ZoomSpeed;
 			FocusSpeed = config.FocusSpeed == 0 ? FocusSpeedDefault : config.FocusSpeed;
 
-			CanPan = true;
-			CanTilt = true;
-			CanZoom = true;
-			CanFocus = true;
+			if (config.Capabilities != null)
+			{
+				CanPan = config.Capabilities.CanPan;
+				CanTilt = config.Capabilities.CanTilt;
+				CanZoom = config.Capabilities.CanZoom;
+				CanFocus = config.Capabilities.CanFocus;
+			}
+			else
+			{
+				CanPan = true;
+				CanTilt = true;
+				CanZoom = true;
+				CanFocus = true;
+			}
 
 			_privacyOnPreset = config.PrivacyOnPreset;
 			_privacyOffPreset = config.PrivacyOffPreset;
@@ -604,7 +614,7 @@ namespace ViscaCameraPlugin
 				byte[] byteArray = System.Text.Encoding.GetEncoding(28591).GetBytes(args.Text);
 
 				this.LogVerbose("Handle_BytesRecieved: {byteArray}", ComTextHelper.GetEscapedText(byteArray));
-				
+
 				if (byteArray.Length < 3)
 				{
 					this.LogVerbose("byteArray.Length < 3, power status is held in byteArray[2]");
