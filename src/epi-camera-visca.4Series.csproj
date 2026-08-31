@@ -38,7 +38,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Crestron.SimplSharp.SDK.ProgramLibrary" Version="2.21.128" />
-		<PackageReference Include="PepperDashEssentials" Version="3.0.0-feat-update-ihaswebview.1">
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-multiview-control-interface.1">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
