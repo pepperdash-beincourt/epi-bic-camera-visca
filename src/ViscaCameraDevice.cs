@@ -34,6 +34,28 @@ namespace ViscaCameraPlugin
 		private readonly bool _commsIsSerial;
 		private readonly bool _useHeader;
 		private uint _counter;
+		private readonly object _counterLock = new object();
+
+		/// <summary>The last VISCA payload sent, kept so it can be sent again after a sequence reset.</summary>
+		private byte[] _lastCommand;
+
+		/// <summary>Sequence numbers rejected in a row, so reset-and-resend cannot run away.</summary>
+		private int _sequenceErrors;
+
+		// VISCA over IP framing: an 8-byte header carrying the payload type, the payload length and
+		// a 4-byte sequence number - length and sequence number both big-endian.
+		private const int HeaderLength = 8;
+		private static readonly byte[] PayloadTypeCommand = { 0x01, 0x00 };
+		private static readonly byte[] PayloadTypeInquiry = { 0x01, 0x10 };
+		private static readonly byte[] PayloadTypeControl = { 0x02, 0x00 };
+		private const int PayloadTypeControlValue = 0x0200;
+		private const int PayloadTypeControlReplyValue = 0x0201;
+
+		/// <summary>How long to let a sequence number reset settle before sending the next command.</summary>
+		private const int SequenceResetSettleMs = 250;
+
+		/// <summary>Stop resending after this many rejections in a row.</summary>
+		private const int SequenceErrorsMax = 3;
 
 		private readonly byte _address = 0x81;
 		private const uint AddressMax = 7;
@@ -239,16 +261,26 @@ namespace ViscaCameraPlugin
 			_privacyOnPreset = config.PrivacyOnPreset;
 			_privacyOffPreset = config.PrivacyOffPreset;
 
+			_comms = comms;
+
 			if (config.Control.Method.ToString().ToLower() == "udp")
 			{
 				_useHeader = true;
+
+				// Each datagram is one complete VISCA-over-IP message, and the header in front of it
+				// can hold 0xFF as part of a sequence number, so gathering on 0xFF would cut messages
+				// in the wrong place.
+				_comms.BytesReceived += Handle_MessageReceived;
+
 				// start polling since comm monitor won't work
 				new CTimer(o => Poll(), null, _pollTimeMs, _pollTimeMs);
 			}
+			else
+			{
+				var commsGather = new CommunicationGather(_comms, (char)0xFF);
+				commsGather.LineReceived += Handle_BytesRecieved;
+			}
 
-			_comms = comms;
-			var commsGather = new CommunicationGather(_comms, (char)0xFF);
-			commsGather.LineReceived += Handle_BytesRecieved;
 			CommunicationMonitor = new GenericCommunicationMonitor(this, _comms, _pollTimeMs, 120000, 300000, Poll);
 
 			var socket = _comms as ISocketStatus;
@@ -542,53 +574,80 @@ namespace ViscaCameraPlugin
 			if (bytes == null) return;
 
 			if (_commsIsSerial)
-				_comms.SendBytes(bytes);
-			else
 			{
-				if (!_comms.IsConnected)
-					_comms.Connect();
-
-				if (_useHeader)
-				{
-					// from Sony SRG-300SE IP v1.1.umc
-					// S-2.3 : Serial I/O > String_To_Send
-					// Power_On_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x02\xFF"
-					// Power_Off_B:		"\x8\[#Address (1-7)\]\x01\x04\x00\x03\xFF"
-
-					// from Sony SRG-300SE IP Visco Processor v1.0
-					//CHANGE String_To_Send
-					//{
-					//    sStringToSend = String_To_Send;
-					//    if(iCounter = 0xFFFFFFFF)
-					//        iCounter = 0;
-					//    else
-					//        iCounter = iCounter + 1;
-					//		Bitwise operators: {{ = rotate left - rotate X to the left by Y bits; full 16 bits ues, same as rotateLeft();
-					//				ex. X {{ Y
-					//    makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
-					//    // generate command
-					//    To_Device = sCommand;
-					//}
-
-					// VISCA-over-IP counter
-					if (_counter != 0xFFFFFFFF)
-						_counter++;
-					else
-						_counter = 0;
-
-					var header = new byte[]
-					{
-						0x01, 0x00, 0x00, Convert.ToByte(bytes.Length), (byte)(_counter << 8), (byte)(_counter << 16), (byte)(_counter << 24), (byte)(_counter << 32)
-					};
-
-					var cmd = new byte[header.Length + bytes.Length];
-					header.CopyTo(cmd, 0);
-					bytes.CopyTo(cmd, header.Length);
-					_comms.SendBytes(cmd);
-				}
-				else
-					_comms.SendBytes(bytes);
+				_comms.SendBytes(bytes);
+				return;
 			}
+
+			if (!_comms.IsConnected)
+				_comms.Connect();
+
+			if (!_useHeader)
+			{
+				_comms.SendBytes(bytes);
+				return;
+			}
+
+			_lastCommand = bytes;
+			_comms.SendBytes(BuildMessage(GetPayloadType(bytes), NextSequenceNumber(), bytes));
+		}
+
+		/// <summary>
+		/// The payload type for a VISCA message. An inquiry - 0x09 in its second byte - has one of
+		/// its own, and a camera that checks the type answers nothing when an inquiry arrives marked
+		/// as a command.
+		/// </summary>
+		private static byte[] GetPayloadType(byte[] payload)
+		{
+			return payload.Length > 1 && payload[1] == 0x09 ? PayloadTypeInquiry : PayloadTypeCommand;
+		}
+
+		/// <summary>
+		/// Wraps a payload in the VISCA-over-IP header.
+		/// </summary>
+		private static byte[] BuildMessage(byte[] payloadType, uint sequence, byte[] payload)
+		{
+			var message = new byte[HeaderLength + payload.Length];
+
+			message[0] = payloadType[0];
+			message[1] = payloadType[1];
+			message[2] = (byte)(payload.Length >> 8);
+			message[3] = (byte)payload.Length;
+			message[4] = (byte)(sequence >> 24);
+			message[5] = (byte)(sequence >> 16);
+			message[6] = (byte)(sequence >> 8);
+			message[7] = (byte)sequence;
+
+			payload.CopyTo(message, HeaderLength);
+
+			return message;
+		}
+
+		private uint NextSequenceNumber()
+		{
+			lock (_counterLock)
+			{
+				_counter = _counter == uint.MaxValue ? 1 : _counter + 1;
+				return _counter;
+			}
+		}
+
+		/// <summary>
+		/// Tells the camera to count sequence numbers from zero again. Without this, a camera that
+		/// tracks them rejects everything sent after a program restart: the processor starts counting
+		/// from zero while the camera carries on from where the last program left off, and only a
+		/// power cycle clears it.
+		/// </summary>
+		public void ResetSequenceNumber()
+		{
+			if (!_useHeader) return;
+
+			lock (_counterLock)
+				_counter = 0;
+
+			this.LogDebug("Resetting the VISCA over IP sequence number");
+
+			_comms.SendBytes(BuildMessage(PayloadTypeControl, 0, new byte[] { 0x01 }));
 		}
 
 		public void SendCustomCommand(string cmd)
@@ -609,11 +668,83 @@ namespace ViscaCameraPlugin
 
 		private void Handle_BytesRecieved(object sender, GenericCommMethodReceiveTextArgs args)
 		{
+			ParseViscaPayload(System.Text.Encoding.GetEncoding(28591).GetBytes(args.Text));
+		}
+
+		/// <summary>
+		/// Handles one complete VISCA-over-IP datagram: strips the header and hands the payload to
+		/// the VISCA parser, or to the control handler for the camera's own messages.
+		/// </summary>
+		private void Handle_MessageReceived(object sender, GenericCommMethodReceiveBytesArgs args)
+		{
+			var message = args.Bytes;
+
+			if (message == null || message.Length < HeaderLength)
+			{
+				this.LogVerbose("Ignoring a message too short to hold a header: {message}",
+					ComTextHelper.GetEscapedText(message ?? new byte[0]));
+				return;
+			}
+
+			var payloadType = (message[0] << 8) | message[1];
+			var length = (message[2] << 8) | message[3];
+
+			if (length <= 0 || HeaderLength + length > message.Length)
+			{
+				this.LogWarning("Message claims a payload of {length} bytes but carries {actual}: {message}",
+					length, message.Length - HeaderLength, ComTextHelper.GetEscapedText(message));
+				return;
+			}
+
+			var payload = new byte[length];
+			Array.Copy(message, HeaderLength, payload, 0, length);
+
+			if (payloadType == PayloadTypeControlValue || payloadType == PayloadTypeControlReplyValue)
+			{
+				HandleControlPayload(payload);
+				return;
+			}
+
+			ParseViscaPayload(payload);
+		}
+
+		/// <summary>
+		/// Handles the camera's control messages. The one that matters is a rejected sequence number:
+		/// everything sent after it is rejected too, so reset the count and send the command again.
+		/// </summary>
+		private void HandleControlPayload(byte[] payload)
+		{
+			if (payload.Length < 2 || payload[0] != 0x0F || payload[1] != 0x01)
+			{
+				this.LogVerbose("Control message: {payload}", ComTextHelper.GetEscapedText(payload));
+				return;
+			}
+
+			_sequenceErrors++;
+
+			if (_sequenceErrors > SequenceErrorsMax)
+			{
+				this.LogWarning("Camera rejected the sequence number {count} times in a row, not sending it again", _sequenceErrors);
+				return;
+			}
+
+			this.LogWarning("Camera rejected the sequence number, resetting it and sending the command again");
+
+			ResetSequenceNumber();
+
+			var lastCommand = _lastCommand;
+			if (lastCommand != null)
+				new CTimer(o => SendBytes(lastCommand), null, SequenceResetSettleMs);
+		}
+
+		private void ParseViscaPayload(byte[] byteArray)
+		{
 			try
 			{
-				byte[] byteArray = System.Text.Encoding.GetEncoding(28591).GetBytes(args.Text);
+				this.LogVerbose("ParseViscaPayload: {byteArray}", ComTextHelper.GetEscapedText(byteArray));
 
-				this.LogVerbose("Handle_BytesRecieved: {byteArray}", ComTextHelper.GetEscapedText(byteArray));
+				// an answer of any kind means the camera is taking our messages again
+				_sequenceErrors = 0;
 
 				if (byteArray.Length < 3)
 				{
@@ -646,26 +777,23 @@ namespace ViscaCameraPlugin
 			{
 				this.LogVerbose("Error parsing feedback: ", err);
 			}
-
-			// TODO [ ] complete method
-			// from Sony SRG-300SE IP Visco Processor v1.0
-			//CHANGE From_Device
-			//{
-			//    if(left(From_Device, 7) = "\x02\x00\x00\x02\x00\x00\x00" && right(From_Device, 2) = "\x0F\x01")	// if camera didn't like the sequence number in the command that was sent
-			//    {
-			//        iCounter = 0xFFFFFFFF; // reset the sequence number to it's highest value
-			//        makestring(sCommand, "\x01\x00\x00%s%s%s%s%s%s", chr(len(sStringToSend)), chr(iCounter {{ 8), chr(iCounter {{ 16), chr(iCounter {{ 24), chr(iCounter {{ 32),  sStringToSend);
-			//        // generate command w/ new sequence number
-			//        To_Device = sCommand;  // resend command
-			//    }
-			//    else if(left(From_Device, 2) = "\x01\x11" && right(From_Device, 1) = "\xFF")	// if valid response
-			//    {
-			//        Response = mid(From_Device, 9, byte(From_Device, 4));
-			//    }
-			//}
 		}
 
 		public void InitializeCamera()
+		{
+			if (_useHeader)
+			{
+				// the camera has to forget the sequence number it was counting from before it will
+				// take anything from a freshly started program
+				ResetSequenceNumber();
+				new CTimer(o => SendInitializationCommands(), null, SequenceResetSettleMs);
+				return;
+			}
+
+			SendInitializationCommands();
+		}
+
+		private void SendInitializationCommands()
 		{
 			// send address set broadcast
 			SendBytes(new byte[] { 0x88, 0x30, 0x01, 0xFF });
