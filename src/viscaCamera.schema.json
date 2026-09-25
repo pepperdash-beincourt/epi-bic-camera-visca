@@ -18,7 +18,8 @@
       "description": "Discriminator identifying the plugin factory that instantiates this device. Accepted aliases are equivalent.",
       "enum": [
         "viscaCamera",
-        "visca"
+        "visca",
+        "viscacamera"
       ]
     },
     "properties": {

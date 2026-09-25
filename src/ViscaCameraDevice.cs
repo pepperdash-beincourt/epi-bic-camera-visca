@@ -272,8 +272,7 @@ namespace ViscaCameraPlugin
 				// in the wrong place.
 				_comms.BytesReceived += Handle_MessageReceived;
 
-				// start polling since comm monitor won't work
-				new CTimer(o => Poll(), null, _pollTimeMs, _pollTimeMs);
+				// No separate poll timer: the communication monitor created below polls UDP too.
 			}
 			else
 			{
