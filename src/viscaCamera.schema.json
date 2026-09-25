@@ -90,7 +90,10 @@
         "capabilities": {
           "$ref": "#/definitions/capabilities"
         }
-      }
+      },
+      "required": [
+        "control"
+      ]
     },
     "control": {
       "type": "object",

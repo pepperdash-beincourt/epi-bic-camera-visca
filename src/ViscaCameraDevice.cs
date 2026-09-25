@@ -34,6 +34,12 @@ namespace ViscaCameraPlugin
 		private readonly bool _commsIsSerial;
 		private readonly bool _useHeader;
 		private uint _counter;
+
+		/// <summary>
+		/// Held from choosing a sequence number until the message carrying it is sent, and around a
+		/// sequence reset. Without it two callers can take numbers 1 and 2 and send 2 first, which a
+		/// camera that tracks sequence numbers rejects.
+		/// </summary>
 		private readonly object _counterLock = new object();
 
 		/// <summary>The last VISCA payload sent, kept so it can be sent again after a sequence reset.</summary>
@@ -587,8 +593,11 @@ namespace ViscaCameraPlugin
 				return;
 			}
 
-			_lastCommand = bytes;
-			_comms.SendBytes(BuildMessage(GetPayloadType(bytes), NextSequenceNumber(), bytes));
+			lock (_counterLock)
+			{
+				_lastCommand = bytes;
+				_comms.SendBytes(BuildMessage(GetPayloadType(bytes), NextSequenceNumber(), bytes));
+			}
 		}
 
 		/// <summary>
@@ -641,12 +650,13 @@ namespace ViscaCameraPlugin
 		{
 			if (!_useHeader) return;
 
-			lock (_counterLock)
-				_counter = 0;
-
 			this.LogDebug("Resetting the VISCA over IP sequence number");
 
-			_comms.SendBytes(BuildMessage(PayloadTypeControl, 0, new byte[] { 0x01 }));
+			lock (_counterLock)
+			{
+				_counter = 0;
+				_comms.SendBytes(BuildMessage(PayloadTypeControl, 0, new byte[] { 0x01 }));
+			}
 		}
 
 		public void SendCustomCommand(string cmd)
