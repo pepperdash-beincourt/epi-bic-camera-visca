@@ -23,7 +23,7 @@
       ]
     },
     "properties": {
-      "$ref": "#/$defs/properties",
+      "$ref": "#/definitions/properties",
       "description": "Properties object for a device of type \"visca\" / \"viscacamera\", backed by ViscaCameraConfig (ViscaCameraConfig.cs)."
     }
   },
@@ -33,12 +33,12 @@
     "type",
     "properties"
   ],
-  "$defs": {
+  "definitions": {
     "properties": {
       "type": "object",
       "properties": {
         "control": {
-          "$ref": "#/$defs/control"
+          "$ref": "#/definitions/control"
         },
         "address": {
           "type": "integer",
@@ -84,11 +84,11 @@
           "type": "array",
           "description": "List of named camera presets.",
           "items": {
-            "$ref": "#/$defs/preset"
+            "$ref": "#/definitions/preset"
           }
         },
         "capabilities": {
-          "$ref": "#/$defs/capabilities"
+          "$ref": "#/definitions/capabilities"
         }
       }
     },
@@ -111,7 +111,7 @@
           "type": "string"
         },
         "tcpSshProperties": {
-          "$ref": "#/$defs/tcpSshProperties"
+          "$ref": "#/definitions/tcpSshProperties"
         },
         "irFile": {
           "type": "string"
