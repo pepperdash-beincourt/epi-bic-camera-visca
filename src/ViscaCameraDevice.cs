@@ -8,14 +8,25 @@ using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Devices.Common.Cameras;
 
 namespace ViscaCameraPlugin
 {
 	public class ViscaCameraDevice : EssentialsBridgeableDevice, ICommunicationMonitor, IRoutingSource,
 		IHasCameraOff, IHasCameraPtzControl, IHasCameraFocusControl, ICameraCapabilities,
-		IHasPowerControlWithFeedback, IHasCameraPresets
+		IHasPowerControlWithFeedback, IHasCameraPresets, IDeviceInfoProvider
 	{
+		/// <summary>
+		/// The camera's address from configuration and the version it reports. One instance for the
+		/// life of the device, so what is written to it is what readers see.
+		/// </summary>
+		public DeviceInfo DeviceInfo { get; } = new DeviceInfo();
+
+		public event DeviceInfoChangeHandler DeviceInfoChanged;
+
+		/// <summary>How long after the connection settles to ask the camera for its version.</summary>
+		private const int VersionInquiryDelayMs = 2000;
 
 		public bool CanPan { get; private set; }
 
@@ -268,6 +279,13 @@ namespace ViscaCameraPlugin
 			_privacyOffPreset = config.PrivacyOffPreset;
 
 			_comms = comms;
+
+			var address = config.Control?.TcpSshProperties?.Address;
+			if (!string.IsNullOrEmpty(address))
+			{
+				DeviceInfo.IpAddress = address;
+				DeviceInfo.HostName = address;
+			}
 
 			if (config.Control.Method.ToString().ToLower() == "udp")
 			{
@@ -761,6 +779,19 @@ namespace ViscaCameraPlugin
 					return;
 				}
 
+				// Before the power reply: both start y0 50, and only the length tells them apart.
+				if (ViscaVersionReply.TryParse(byteArray, out var vendor, out var model, out var rom))
+				{
+					var firmware = ViscaVersionReply.Describe(vendor, model, rom);
+					if (firmware != DeviceInfo.FirmwareVersion)
+					{
+						DeviceInfo.FirmwareVersion = firmware;
+						this.LogInformation("Camera reports firmware {firmware}", firmware);
+						DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(DeviceInfo));
+					}
+					return;
+				}
+
 				if (byteArray[1] == 0x50)
 				{
 					this.LogVerbose("Handle_BytesRecieved: power status");
@@ -809,6 +840,18 @@ namespace ViscaCameraPlugin
 
 			// send IF clear on connection
 			SendBytes(new byte[] { 0x88, 0x01, 0x00, 0x01, 0xFF });
+
+			// ask what the camera is once it has taken the address and cleared
+			new CTimer(o => UpdateDeviceInfo(), null, VersionInquiryDelayMs);
+		}
+
+		/// <summary>
+		/// Asks the camera for its vendor, model and ROM revision; the reply fills
+		/// <see cref="DeviceInfo"/>.
+		/// </summary>
+		public void UpdateDeviceInfo()
+		{
+			SendBytes(ViscaVersionReply.Inquiry(_address));
 		}
 
 		public void Poll()

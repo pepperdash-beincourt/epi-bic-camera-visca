@@ -19,6 +19,7 @@ public class DeviceInterfaceTests
     [InlineData("PepperDash.Essentials.Devices.Common.Cameras.IHasCameraOff")]
     [InlineData("PepperDash.Essentials.Devices.Common.Cameras.IHasCameraPtzControl")]
     [InlineData("PepperDash.Essentials.Devices.Common.Cameras.IHasCameraFocusControl")]
+    [InlineData("PepperDash.Essentials.Core.DeviceInfo.IDeviceInfoProvider")]
     public void Device_Implements_Interface(string interfaceFullName)
     {
         DeviceInterfaceNames.Should().Contain(interfaceFullName,

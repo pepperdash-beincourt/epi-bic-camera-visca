@@ -24,4 +24,9 @@
     <!-- Ensures the plugin is built before tests run (no direct assembly reference needed) -->
     <ProjectReference Include="..\src\epi-camera-visca.4Series.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Free of Crestron types, so compiled in directly and exercised, unlike the plugin DLL. -->
+    <Compile Include="..\src\ViscaVersionReply.cs" Link="ViscaVersionReply.cs" />
+  </ItemGroup>
 </Project>
